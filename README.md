@@ -88,7 +88,11 @@ CREATE TABLE SAP_Orders (
     is_integrated BIT NOT NULL DEFAULT 0, -- si se integro con SAP o no
     is_failed BIT NOT NULL DEFAULT 0, -- si la integracion fallo por algun motivo (ejemplo: error de validacion en SAP) se debe marcar este campo para no seguir intentando integrar hasta que se revise el error y se corrija
     is_updated BIT NOT NULL DEFAULT 0, -- si esta actulizada desde la ultima integracion si lo esta se debe actualizar en SAP y volver a poner este campo en 0
+    is_mail_send BIT NOT NULL DEFAULT 0, -- se notico al usurio
+    mail_send_date DATETIME NULL, -- fecha de envio del correo de notificacion
     salesperson VARCHAR(150) NULL,
+    seler_email VARCHAR(150) NULL,
+    selet_id SMALLINT DEFAULT 0,
     serie INT NULL,
     doc_num INT NULL,
     doc_entry INT NULL,
@@ -134,13 +138,13 @@ WHERE id_zoho LIKE 'ZOHO-TEST-%';
 GO
 
 -- Inserta cabeceras (quedan pendientes con is_integrated = 0)
-INSERT INTO SAP_Orders (id_zoho, customer, order_date, is_integrated, is_updated, salesperson)
+INSERT INTO SAP_Orders (id_zoho, customer, order_date, is_integrated, is_updated, salesperson, seler_email, selet_id)
 VALUES
-('ZOHO-TEST-0001','C0102434438', DATEADD(MINUTE,-30,GETDATE()), 0, 0, 'VENDEDOR 01'),
-('ZOHO-TEST-0002','C0102493269001', DATEADD(MINUTE,-25,GETDATE()), 0, 0, 'VENDEDOR 02'),
-('ZOHO-TEST-0003','C0102534328001', DATEADD(MINUTE,-20,GETDATE()), 0, 0, 'VENDEDOR 03'),
-('ZOHO-TEST-0004','C0102578507001', DATEADD(MINUTE,-15,GETDATE()), 0, 0, 'VENDEDOR 04'),
-('ZOHO-TEST-0005','C0102622289001', DATEADD(MINUTE,-10,GETDATE()), 0, 0, 'VENDEDOR 05');
+('ZOHO-TEST-0001','C0102434438', DATEADD(MINUTE,-30,GETDATE()), 0, 0, 'Eduardo Villota', 'evillota@vinesa.com.ec', 1),
+('ZOHO-TEST-0002','C0102493269001', DATEADD(MINUTE,-25,GETDATE()), 0, 0, 'Eduardo Villota', 'evillota@vinesa.com.ec', 1),
+('ZOHO-TEST-0003','C0102534328001', DATEADD(MINUTE,-20,GETDATE()), 0, 0, 'Eduardo Villota', 'evillota@vinesa.com.ec', 1),
+('ZOHO-TEST-0004','C0102578507001', DATEADD(MINUTE,-15,GETDATE()), 0, 0, 'Eduardo Villota', 'evillota@vinesa.com.ec', 1),
+('ZOHO-TEST-0005','C0102622289001', DATEADD(MINUTE,-10,GETDATE()), 0, 0, 'Eduardo Villota', 'evillota@vinesa.com.ec', 1);
 GO
 
 -- Inserta detalles usando artículos válidos
@@ -213,14 +217,16 @@ DECLARE @CustomerCount INT = (SELECT COUNT(1) FROM @Customers);
     SELECT TOP (20) ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n
     FROM sys.all_objects
 )
-INSERT INTO SAP_Orders (id_zoho, customer, order_date, is_integrated, is_updated, salesperson)
+INSERT INTO SAP_Orders (id_zoho, customer, order_date, is_integrated, is_updated, salesperson, seler_email, selet_id)
 SELECT
     CONCAT('ZOHO-TEST-X', RIGHT('0000' + CAST(n AS VARCHAR(4)), 4)),
     c.code,
     DATEADD(MINUTE, -(90 + n), GETDATE()),
     0,
     0,
-    CONCAT('VENDEDOR ', RIGHT('00' + CAST(((n - 1) % 5) + 1 AS VARCHAR(2)), 2))
+    'Eduardo Villota',
+    'evillota@vinesa.com.ec',
+    1
 FROM N
 CROSS APPLY (
     SELECT code
@@ -300,3 +306,43 @@ Tabla de referencia en español latino:
 ```txt
 Errores recibidos en SAP
 Error al crear la orden de venta: (1009) Codigo : 01011010010206010750 con saldo Negativo
+
+## JSON de muestra para endpoint (recepción de pedidos)
+
+> Este JSON **no incluye variables de estado** (`is_integrated`, `is_failed`, `is_updated`, `is_mail_send`, `mail_send_date`, `integration_date`, `error_message`) porque esas las controla el proyecto internamente.
+
+```json
+{
+    "id_zoho": "ZOHO-API-0001",
+    "customer": "C0102434438",
+    "order_date": "2026-02-21T10:30:00",
+    "salesperson": "Eduardo Villota",
+    "seler_email": "evillota@vinesa.com.ec",
+    "selet_id": 1,
+    "serie": 1,
+    "details": [
+        {
+            "product": "01022094490106020750",
+            "quantity": 2.0,
+            "unit_price": 18.5,
+            "discount": 0.0,
+            "total": 37.0,
+            "tax": 0.0,
+            "cost_center": "CC-01",
+            "account": "4-01-001",
+            "notes": "Pedido generado desde endpoint"
+        },
+        {
+            "product": "01022094490111010750",
+            "quantity": 1.0,
+            "unit_price": 17.25,
+            "discount": 0.0,
+            "total": 17.25,
+            "tax": 0.0,
+            "cost_center": "CC-01",
+            "account": "4-01-001",
+            "notes": "Segunda línea del pedido"
+        }
+    ]
+}
+```
