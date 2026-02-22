@@ -3,9 +3,9 @@ using System.Linq;
 using System.Threading;
 using System.ServiceProcess;
 using System.Diagnostics;
-using ConsoleApp2.IntgSAPLibs;
+using ZhohoSapIntg.IntgSAPLibs;
 
-namespace ConsoleApp2
+namespace ZhohoSapIntg
 {
     internal static class Program
     {
@@ -47,6 +47,8 @@ namespace ConsoleApp2
                     }
 
                     WriteInfo("Iniciando importación de " + pendingOrders.Count + " pedido(s).");
+                       int importedCount = 0;
+                       int failedCount = 0;
 
                     foreach (var order in pendingOrders)
                     {
@@ -56,12 +58,16 @@ namespace ConsoleApp2
                             repository.MarkOrderIntegrated(order.Id, result.DocEntry, result.DocNum);
 
                             WriteInfo("Pedido integrado. order_id=" + order.Id + " docEntry=" + result.DocEntry + " docNum=" + result.DocNum);
+                               importedCount++;
                         }
                         catch (Exception orderEx)
                         {
+                               failedCount++;
                             FileLogger.Error("Error integrando pedido order_id=" + order.Id + ". Se continuará con el siguiente.", orderEx);
                         }
                     }
+
+                       WriteInfo("Resumen del ciclo: total=" + pendingOrders.Count + ", importados=" + importedCount + ", fallidos=" + failedCount + ".");
                 }
             }
             catch (Exception ex)
@@ -105,7 +111,7 @@ namespace ConsoleApp2
 
         public SapIntegrationService()
         {
-            ServiceName = "ConsoleApp2Service";
+            ServiceName = "ZhohoSapIntgService";
             AutoLog = true;
             CanPauseAndContinue = false;
             CanShutdown = true;

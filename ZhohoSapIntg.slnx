@@ -4,7 +4,7 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="ConsoleApp2.csproj" Id="49cec86d-86a6-467f-b56e-6d536d69671e">
+  <Project Path="ZhohoSapIntg.csproj" Id="49cec86d-86a6-467f-b56e-6d536d69671e">
     <Platform Solution="*|x64" Project="x64" />
     <Platform Solution="*|x86" Project="x86" />
     <Platform Solution="Debug|Any CPU" Project="x64" />

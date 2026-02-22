@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 
-namespace ConsoleApp2.IntgSAPLibs
+namespace ZhohoSapIntg.IntgSAPLibs
 {
     internal sealed class SqlOrderRepository
     {

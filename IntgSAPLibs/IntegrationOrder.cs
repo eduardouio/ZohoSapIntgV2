@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace ConsoleApp2.IntgSAPLibs
+namespace ZhohoSapIntg.IntgSAPLibs
 {
     internal sealed class IntegrationOrder
     {

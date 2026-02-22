@@ -1,12 +1,12 @@
 using System;
 using System.IO;
 
-namespace ConsoleApp2.IntgSAPLibs
+namespace ZhohoSapIntg.IntgSAPLibs
 {
     internal static class FileLogger
     {
         private static readonly object Sync = new object();
-        private static readonly string LogDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "ConsoleApp2", "logs");
+        private static readonly string LogDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "ZhohoSapIntg", "logs");
         private static readonly string LogFilePath = Path.Combine(LogDirectory, "app.log");
 
         public static string CurrentLogFilePath

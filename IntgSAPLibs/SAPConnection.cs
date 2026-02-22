@@ -1,7 +1,7 @@
 using System;
 using SAPbobsCOM;
 
-namespace ConsoleApp2.IntgSAPLibs
+namespace ZhohoSapIntg.IntgSAPLibs
 {
     internal sealed class SAPConnection : IDisposable
     {
