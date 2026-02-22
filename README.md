@@ -59,6 +59,8 @@ sc.exe delete ZhohoSapIntgService
 - Los pedidos se leen desde `DB_INTG_SAPZOHO_PROD` (`SAP_Orders` + `SAP_Order_Details`) filtrando `is_integrated = 0`.
 - Cuando SAP crea la orden correctamente, se actualiza en SQL: `is_integrated = 1`, `integration_date`, `doc_entry`, `doc_num`.
 - También se procesan pedidos ya integrados con `is_updated = 1` (y `doc_entry` con valor) para **actualizarlos** en SAP; al finalizar se vuelve `is_updated = 0`.
+- Si falla la creación o actualización en SAP, se marca `is_failed = 1` y se guarda el detalle en `error_message` (máx. 500 chars).
+- Los procesos de lectura para creación/actualización solo toman registros con `is_failed = 0`.
 - Se genera log en: `C:\ProgramData\ZhohoSapIntg\logs\app.log`
 
 Monitoreo en tiempo real desde PowerShell:
@@ -84,11 +86,13 @@ CREATE TABLE SAP_Orders (
     order_date DATETIME NOT NULL,
     integration_date DATETIME NULL,
     is_integrated BIT NOT NULL DEFAULT 0, -- si se integro con SAP o no
+    is_failed BIT NOT NULL DEFAULT 0, -- si la integracion fallo por algun motivo (ejemplo: error de validacion en SAP) se debe marcar este campo para no seguir intentando integrar hasta que se revise el error y se corrija
     is_updated BIT NOT NULL DEFAULT 0, -- si esta actulizada desde la ultima integracion si lo esta se debe actualizar en SAP y volver a poner este campo en 0
     salesperson VARCHAR(150) NULL,
     serie INT NULL,
     doc_num INT NULL,
     doc_entry INT NULL,
+    error_message VARCHAR(500) NULL,
     created_at DATETIME NOT NULL DEFAULT GETDATE()
 );
 GO

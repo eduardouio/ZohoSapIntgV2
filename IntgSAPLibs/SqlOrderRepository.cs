@@ -44,6 +44,7 @@ SELECT
 FROM SAP_Orders o
 LEFT JOIN SAP_Order_Details d ON d.order_id = o.id
 WHERE o.is_integrated = 0
+    AND o.is_failed = 0
 ORDER BY o.id, d.id;";
 
             return GetOrdersByQuery(query);
@@ -70,6 +71,7 @@ FROM SAP_Orders o
 LEFT JOIN SAP_Order_Details d ON d.order_id = o.id
 WHERE o.is_integrated = 1
   AND o.is_updated = 1
+    AND o.is_failed = 0
   AND o.doc_entry IS NOT NULL
 ORDER BY o.id, d.id;";
 
@@ -134,6 +136,8 @@ UPDATE SAP_Orders
 SET
     is_integrated = 1,
     is_updated = 0,
+    is_failed = 0,
+    error_message = NULL,
     integration_date = GETDATE(),
     doc_entry = @docEntry,
     doc_num = @docNum
@@ -157,6 +161,8 @@ WHERE id = @id;";
 UPDATE SAP_Orders
 SET
     is_updated = 0,
+    is_failed = 0,
+    error_message = NULL,
     integration_date = GETDATE()
 WHERE id = @id;";
 
@@ -168,6 +174,57 @@ WHERE id = @id;";
                 connection.Open();
                 command.ExecuteNonQuery();
             }
+        }
+
+        public void MarkOrderCreateFailed(int orderId, string errorMessage)
+        {
+            const string update = @"
+UPDATE SAP_Orders
+SET
+    is_failed = 1,
+    error_message = @errorMessage
+WHERE id = @id;";
+
+            using (var connection = new SqlConnection(_connectionString))
+            using (var command = new SqlCommand(update, connection))
+            {
+                command.Parameters.AddWithValue("@id", orderId);
+                command.Parameters.AddWithValue("@errorMessage", TruncateErrorMessage(errorMessage));
+
+                connection.Open();
+                command.ExecuteNonQuery();
+            }
+        }
+
+        public void MarkOrderUpdateFailed(int orderId, string errorMessage)
+        {
+            const string update = @"
+UPDATE SAP_Orders
+SET
+    is_updated = 1,
+    is_failed = 1,
+    error_message = @errorMessage
+WHERE id = @id;";
+
+            using (var connection = new SqlConnection(_connectionString))
+            using (var command = new SqlCommand(update, connection))
+            {
+                command.Parameters.AddWithValue("@id", orderId);
+                command.Parameters.AddWithValue("@errorMessage", TruncateErrorMessage(errorMessage));
+
+                connection.Open();
+                command.ExecuteNonQuery();
+            }
+        }
+
+        private static string TruncateErrorMessage(string errorMessage)
+        {
+            if (string.IsNullOrWhiteSpace(errorMessage))
+            {
+                return "Error no especificado durante integración SAP.";
+            }
+
+            return errorMessage.Length <= 500 ? errorMessage : errorMessage.Substring(0, 500);
         }
     }
 }

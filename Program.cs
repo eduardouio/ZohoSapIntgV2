@@ -55,6 +55,14 @@ namespace ZhohoSapIntg
                         catch (Exception updateEx)
                         {
                             updateFailedCount++;
+                            try
+                            {
+                                repository.MarkOrderUpdateFailed(order.Id, updateEx.Message);
+                            }
+                            catch (Exception persistEx)
+                            {
+                                FileLogger.Error("No se pudo persistir estado de fallo para actualización order_id=" + order.Id + ".", persistEx);
+                            }
                             FileLogger.Error("Error actualizando pedido order_id=" + order.Id + ". Se continuará con el siguiente.", updateEx);
                         }
                     }
@@ -87,6 +95,14 @@ namespace ZhohoSapIntg
                         catch (Exception orderEx)
                         {
                             failedCount++;
+                            try
+                            {
+                                repository.MarkOrderCreateFailed(order.Id, orderEx.Message);
+                            }
+                            catch (Exception persistEx)
+                            {
+                                FileLogger.Error("No se pudo persistir estado de fallo para creación order_id=" + order.Id + ".", persistEx);
+                            }
                             FileLogger.Error("Error integrando pedido order_id=" + order.Id + ". Se continuará con el siguiente.", orderEx);
                         }
                     }
