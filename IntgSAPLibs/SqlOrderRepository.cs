@@ -26,14 +26,14 @@ namespace ZhohoSapIntg.IntgSAPLibs
 
         public List<IntegrationOrder> GetPendingOrders()
         {
-            var ordersById = new Dictionary<int, IntegrationOrder>();
-
             const string query = @"
 SELECT
     o.id,
     o.id_zoho,
     o.customer,
     o.order_date,
+    o.doc_entry,
+    o.doc_num,
     o.salesperson,
     d.id AS detail_id,
     d.order_id,
@@ -45,6 +45,40 @@ FROM SAP_Orders o
 LEFT JOIN SAP_Order_Details d ON d.order_id = o.id
 WHERE o.is_integrated = 0
 ORDER BY o.id, d.id;";
+
+            return GetOrdersByQuery(query);
+        }
+
+        public List<IntegrationOrder> GetOrdersToUpdate()
+        {
+            const string query = @"
+SELECT
+    o.id,
+    o.id_zoho,
+    o.customer,
+    o.order_date,
+    o.doc_entry,
+    o.doc_num,
+    o.salesperson,
+    d.id AS detail_id,
+    d.order_id,
+    d.product,
+    d.quantity,
+    d.unit_price,
+    d.discount
+FROM SAP_Orders o
+LEFT JOIN SAP_Order_Details d ON d.order_id = o.id
+WHERE o.is_integrated = 1
+  AND o.is_updated = 1
+  AND o.doc_entry IS NOT NULL
+ORDER BY o.id, d.id;";
+
+            return GetOrdersByQuery(query);
+        }
+
+        private List<IntegrationOrder> GetOrdersByQuery(string query)
+        {
+            var ordersById = new Dictionary<int, IntegrationOrder>();
 
             using (var connection = new SqlConnection(_connectionString))
             using (var command = new SqlCommand(query, connection))
@@ -64,6 +98,8 @@ ORDER BY o.id, d.id;";
                                 ZohoId = reader["id_zoho"] as string,
                                 Customer = reader["customer"] as string,
                                 OrderDate = reader.GetDateTime(reader.GetOrdinal("order_date")),
+                                DocEntry = reader["doc_entry"] == DBNull.Value ? (int?)null : reader.GetInt32(reader.GetOrdinal("doc_entry")),
+                                DocNum = reader["doc_num"] == DBNull.Value ? (int?)null : reader.GetInt32(reader.GetOrdinal("doc_num")),
                                 Salesperson = reader["salesperson"] as string
                             };
 
@@ -109,6 +145,25 @@ WHERE id = @id;";
                 command.Parameters.AddWithValue("@id", orderId);
                 command.Parameters.AddWithValue("@docEntry", docEntry);
                 command.Parameters.AddWithValue("@docNum", docNum);
+
+                connection.Open();
+                command.ExecuteNonQuery();
+            }
+        }
+
+        public void MarkOrderUpdated(int orderId)
+        {
+            const string update = @"
+UPDATE SAP_Orders
+SET
+    is_updated = 0,
+    integration_date = GETDATE()
+WHERE id = @id;";
+
+            using (var connection = new SqlConnection(_connectionString))
+            using (var command = new SqlCommand(update, connection))
+            {
+                command.Parameters.AddWithValue("@id", orderId);
 
                 connection.Open();
                 command.ExecuteNonQuery();

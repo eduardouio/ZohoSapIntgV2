@@ -58,6 +58,7 @@ sc.exe delete ZhohoSapIntgService
 - La lógica SAP se ejecuta al iniciar el servicio y luego cada 5 minutos.
 - Los pedidos se leen desde `DB_INTG_SAPZOHO_PROD` (`SAP_Orders` + `SAP_Order_Details`) filtrando `is_integrated = 0`.
 - Cuando SAP crea la orden correctamente, se actualiza en SQL: `is_integrated = 1`, `integration_date`, `doc_entry`, `doc_num`.
+- También se procesan pedidos ya integrados con `is_updated = 1` (y `doc_entry` con valor) para **actualizarlos** en SAP; al finalizar se vuelve `is_updated = 0`.
 - Se genera log en: `C:\ProgramData\ZhohoSapIntg\logs\app.log`
 
 Monitoreo en tiempo real desde PowerShell:

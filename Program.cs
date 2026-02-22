@@ -33,22 +33,46 @@ namespace ZhohoSapIntg
                 {
                     WriteInfo("Conectado correctamente a SAP");
                     var salesOrderManager = new SalesOrderManager(sapConnection.Company);
+                    var salesOrderUpdateManager = new SalesOrderUpdateManager(sapConnection.Company);
                     var repository = new SqlOrderRepository();
+
+                    WriteInfo("Buscando pedidos pendientes por actualizar...");
+                    var ordersToUpdate = repository.GetOrdersToUpdate();
+                    WriteInfo("Pedidos para actualizar encontrados: " + ordersToUpdate.Count);
+
+                    int updatedCount = 0;
+                    int updateFailedCount = 0;
+
+                    foreach (var order in ordersToUpdate)
+                    {
+                        try
+                        {
+                            salesOrderUpdateManager.ActualizarOrdenVenta(order);
+                            repository.MarkOrderUpdated(order.Id);
+                            updatedCount++;
+                            WriteInfo("Pedido actualizado. order_id=" + order.Id + " docEntry=" + order.DocEntry);
+                        }
+                        catch (Exception updateEx)
+                        {
+                            updateFailedCount++;
+                            FileLogger.Error("Error actualizando pedido order_id=" + order.Id + ". Se continuará con el siguiente.", updateEx);
+                        }
+                    }
 
                     WriteInfo("Buscando pedidos pendientes por importar...");
                     var pendingOrders = repository.GetPendingOrders();
 
                     WriteInfo("Pedidos pendientes encontrados: " + pendingOrders.Count);
 
-                    if (pendingOrders.Count == 0)
+                    if (pendingOrders.Count == 0 && ordersToUpdate.Count == 0)
                     {
-                        WriteInfo("No hay pedidos pendientes para importar en este ciclo.");
+                        WriteInfo("No hay pedidos pendientes por crear ni por actualizar en este ciclo.");
                         return;
                     }
 
                     WriteInfo("Iniciando importación de " + pendingOrders.Count + " pedido(s).");
-                       int importedCount = 0;
-                       int failedCount = 0;
+                    int importedCount = 0;
+                    int failedCount = 0;
 
                     foreach (var order in pendingOrders)
                     {
@@ -58,16 +82,17 @@ namespace ZhohoSapIntg
                             repository.MarkOrderIntegrated(order.Id, result.DocEntry, result.DocNum);
 
                             WriteInfo("Pedido integrado. order_id=" + order.Id + " docEntry=" + result.DocEntry + " docNum=" + result.DocNum);
-                               importedCount++;
+                            importedCount++;
                         }
                         catch (Exception orderEx)
                         {
-                               failedCount++;
+                            failedCount++;
                             FileLogger.Error("Error integrando pedido order_id=" + order.Id + ". Se continuará con el siguiente.", orderEx);
                         }
                     }
 
-                       WriteInfo("Resumen del ciclo: total=" + pendingOrders.Count + ", importados=" + importedCount + ", fallidos=" + failedCount + ".");
+                    WriteInfo("Resumen de creación: total=" + pendingOrders.Count + ", importados=" + importedCount + ", fallidos=" + failedCount + ".");
+                    WriteInfo("Resumen de actualización: total=" + ordersToUpdate.Count + ", actualizados=" + updatedCount + ", fallidos=" + updateFailedCount + ".");
                 }
             }
             catch (Exception ex)
