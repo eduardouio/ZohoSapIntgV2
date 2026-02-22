@@ -82,6 +82,8 @@ GO
 CREATE TABLE SAP_Orders (
     id INT IDENTITY(1,1) PRIMARY KEY, 
     id_zoho VARCHAR(50) NOT NULL,
+    enterprise VARCHAR(50) NOT NULL DEFAULT 'VINESA','PLUSBRABD','SERVMULTIMARC','VINLITORAL', 
+    id_warehouse INT NOT NULL DEFAULT 1, -- para futuras integraciones con otras bodegas
     customer VARCHAR(150) NOT NULL,
     order_date DATETIME NOT NULL,
     integration_date DATETIME NULL,
@@ -92,7 +94,7 @@ CREATE TABLE SAP_Orders (
     mail_send_date DATETIME NULL, -- fecha de envio del correo de notificacion
     salesperson VARCHAR(150) NULL,
     seler_email VARCHAR(150) NULL,
-    selet_id SMALLINT DEFAULT 0,
+    seler_id SMALLINT DEFAULT 0,
     serie INT NULL,
     doc_num INT NULL,
     doc_entry INT NULL,
@@ -138,7 +140,7 @@ WHERE id_zoho LIKE 'ZOHO-TEST-%';
 GO
 
 -- Inserta cabeceras (quedan pendientes con is_integrated = 0)
-INSERT INTO SAP_Orders (id_zoho, customer, order_date, is_integrated, is_updated, salesperson, seler_email, selet_id)
+INSERT INTO SAP_Orders (id_zoho, customer, order_date, is_integrated, is_updated, salesperson, seler_email, seler_id, enterprise, id_warehouse)
 VALUES
 ('ZOHO-TEST-0001','C0102434438', DATEADD(MINUTE,-30,GETDATE()), 0, 0, 'Eduardo Villota', 'evillota@vinesa.com.ec', 1),
 ('ZOHO-TEST-0002','C0102493269001', DATEADD(MINUTE,-25,GETDATE()), 0, 0, 'Eduardo Villota', 'evillota@vinesa.com.ec', 1),
@@ -217,7 +219,7 @@ DECLARE @CustomerCount INT = (SELECT COUNT(1) FROM @Customers);
     SELECT TOP (20) ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n
     FROM sys.all_objects
 )
-INSERT INTO SAP_Orders (id_zoho, customer, order_date, is_integrated, is_updated, salesperson, seler_email, selet_id)
+INSERT INTO SAP_Orders (id_zoho, customer, order_date, is_integrated, is_updated, salesperson, seler_email, seler_id)
 SELECT
     CONCAT('ZOHO-TEST-X', RIGHT('0000' + CAST(n AS VARCHAR(4)), 4)),
     c.code,
@@ -316,7 +318,9 @@ Error al crear la orden de venta: (1009) Codigo : 01011010010206010750 con saldo
     "order_date": "2026-02-21T10:30:00",
     "salesperson": "Eduardo Villota",
     "seler_email": "evillota@vinesa.com.ec",
-    "selet_id": 1,
+    "enterprise" : "VINESA",
+    "id_warehouse": 1,
+    "seler_id": 1,
     "serie": 1,
     "details": [
         {
