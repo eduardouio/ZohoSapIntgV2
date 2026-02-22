@@ -74,6 +74,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IntgSAPLibs\FileLogger.cs" />
+    <Compile Include="IntgSAPLibs\SAPConnection.cs" />
+    <Compile Include="IntgSAPLibs\SalesOrderManager.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

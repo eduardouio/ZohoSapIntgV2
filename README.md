@@ -136,3 +136,8 @@ Tabla de referencia en español latino:
 | `oDrafts` | 112 | Borradores de documentos |
 
 
+
+
+```txt
+Errores recibidos en SAP
+Error al crear la orden de venta: (1009) Codigo : 01011010010206010750 con saldo Negativo

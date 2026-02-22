@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using SAPbobsCOM;
-using System.Threading.Tasks;
 using System.Threading;
 using System.ServiceProcess;
 using System.Diagnostics;
+using ConsoleApp2.IntgSAPLibs;
 
 namespace ConsoleApp2
 {
@@ -14,49 +11,40 @@ namespace ConsoleApp2
     {
         static void Main(string[] args)
         {
+            FileLogger.Info("Aplicación iniciada.");
+
             if (Environment.UserInteractive || IsConsoleMode(args))
             {
+                FileLogger.Info("Ejecución en modo interactivo/consola.");
                 EjecutarProcesoSAP();
                 return;
             }
 
+            FileLogger.Info("Ejecución en modo servicio de Windows.");
             ServiceBase.Run(new SapIntegrationService());
         }
 
         internal static void EjecutarProcesoSAP()
         {
-            Company oCompany = new SAPbobsCOM.Company();
-
+            FileLogger.Info("Inicia proceso SAP.");
             try
             {
-                oCompany.Server = "SERVIDORSAP";
-                oCompany.LicenseServer = "SERVIDORSAP:30000";
-                oCompany.CompanyDB = "TEST_VINESA";
-                oCompany.DbServerType = BoDataServerTypes.dst_MSSQL2016;
-
-                // CAMBIAR DESPUES, NO OLVIDAR
-                oCompany.UserName = "auditori";
-                oCompany.Password = "1234";
-                oCompany.DbUserName = "intg";
-                oCompany.DbPassword = "Horiz0nt3s";
-
-                oCompany.UseTrusted = false;
-
-                int conexion = oCompany.Connect();
-                if (conexion != 0)
+                using (var sapConnection = new SAPConnection())
                 {
-                    throw new InvalidOperationException("Conexión Errónea: " + oCompany.GetLastErrorDescription());
+                    WriteInfo("Conectado correctamente");
+                    var salesOrderManager = new SalesOrderManager(sapConnection.Company);
+                    string docEntry = salesOrderManager.CrearOrdenVentaPrueba();
+                    WriteInfo("Orden de venta creada exitosamente. DocEntry: " + docEntry);
                 }
-
-                WriteInfo("Conectado correctamente");
-                CrearOrdenCompra(oCompany);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.Error("Error en proceso SAP.", ex);
+                throw;
             }
             finally
             {
-                if (oCompany.Connected)
-                {
-                    oCompany.Disconnect();
-                }
+                FileLogger.Info("Finaliza proceso SAP.");
             }
         }
 
@@ -73,42 +61,11 @@ namespace ConsoleApp2
 
         private static void WriteInfo(string message)
         {
+            FileLogger.Info(message);
+
             if (Environment.UserInteractive)
             {
                 Console.WriteLine(message);
-            }
-        }
-
-        static void CrearOrdenCompra(Company oCompany)
-        {
-            Documents oOrden = (Documents)oCompany.GetBusinessObject(BoObjectTypes.oOrders);
-            oOrden.CardCode = "C1790016919001";
-            oOrden.FederalTaxID = "1790016919001";
-            oOrden.DocDate = DateTime.Now;
-            oOrden.DocDueDate = DateTime.Now.AddDays(7);
-            oOrden.TaxDate = DateTime.Now.AddDays(7);
-            oOrden.Comments = "OrdenPrueba creada desde la API";
-
-            oOrden.Lines.ItemCode = "01011010010206010750";
-            oOrden.Lines.Quantity = 904000;
-            oOrden.Lines.WarehouseCode = "1";
-            WriteInfo("proveedor:" + oOrden.CardCode);
-            WriteInfo("Fecha: " + oOrden.DocDate);
-            oOrden.DocObjectCode = BoObjectTypes.oPurchaseOrders;
-            oOrden.Lines.Add();
-
-
-            int RESULT = oOrden.Add();
-
-            if (RESULT != 0)
-            {
-                throw new InvalidOperationException("Error al crear la orden de compra: " + oCompany.GetLastErrorDescription());
-            }
-            else
-            {
-                string docEntry;
-                oCompany.GetNewObjectCode(out docEntry);
-                WriteInfo("Orden de compra creada exitosamente. DocEntry: " + docEntry);
             }
         }
 
@@ -130,11 +87,13 @@ namespace ConsoleApp2
 
         protected override void OnStart(string[] args)
         {
+            FileLogger.Info("Servicio iniciado.");
             _timer = new Timer(RunProcessSafely, null, TimeSpan.Zero, TimeSpan.FromMinutes(5));
         }
 
         protected override void OnStop()
         {
+            FileLogger.Info("Servicio detenido.");
             if (_timer != null)
             {
                 _timer.Dispose();
@@ -146,16 +105,19 @@ namespace ConsoleApp2
         {
             if (_isRunning)
             {
+                FileLogger.Info("Proceso SAP omitido: ya existe una ejecución en curso.");
                 return;
             }
 
             _isRunning = true;
             try
             {
+                FileLogger.Info("Ejecución de tarea programada del servicio.");
                 Program.EjecutarProcesoSAP();
             }
             catch (Exception ex)
             {
+                FileLogger.Error("Error en ejecución del servicio.", ex);
                 EventLog.WriteEntry(ServiceName, ex.ToString(), EventLogEntryType.Error);
             }
             finally

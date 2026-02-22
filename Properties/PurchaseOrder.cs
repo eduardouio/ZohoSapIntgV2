@@ -1,3 +1,0 @@
-Wareasas nomnes = new Wareasas();
-
-
