@@ -112,6 +112,151 @@ CREATE TABLE SAP_Order_Details (
 GO
 ```
 
+## SQL de datos de prueba
+
+```sql
+USE DB_INTG_SAPZOHO_PROD;
+GO
+
+-- Limpieza opcional de datos de prueba previos
+DELETE d
+FROM SAP_Order_Details d
+INNER JOIN SAP_Orders o ON o.id = d.order_id
+WHERE o.id_zoho LIKE 'ZOHO-TEST-%';
+
+DELETE FROM SAP_Orders
+WHERE id_zoho LIKE 'ZOHO-TEST-%';
+GO
+
+-- Inserta cabeceras (quedan pendientes con is_integrated = 0)
+INSERT INTO SAP_Orders (id_zoho, customer, order_date, is_integrated, is_updated, salesperson)
+VALUES
+('ZOHO-TEST-0001','C0102434438', DATEADD(MINUTE,-30,GETDATE()), 0, 0, 'VENDEDOR 01'),
+('ZOHO-TEST-0002','C0102493269001', DATEADD(MINUTE,-25,GETDATE()), 0, 0, 'VENDEDOR 02'),
+('ZOHO-TEST-0003','C0102534328001', DATEADD(MINUTE,-20,GETDATE()), 0, 0, 'VENDEDOR 03'),
+('ZOHO-TEST-0004','C0102578507001', DATEADD(MINUTE,-15,GETDATE()), 0, 0, 'VENDEDOR 04'),
+('ZOHO-TEST-0005','C0102622289001', DATEADD(MINUTE,-10,GETDATE()), 0, 0, 'VENDEDOR 05');
+GO
+
+-- Inserta detalles usando artículos válidos
+INSERT INTO SAP_Order_Details (order_id, product, quantity, unit_price, discount, total, tax, notes)
+SELECT o.id, x.product, x.quantity, x.unit_price, x.discount,
+       ROUND((x.quantity * x.unit_price) * (1 - (x.discount / 100.0)), 4) AS total,
+       0,
+       'Seed de prueba para integración SQL -> SAP'
+FROM SAP_Orders o
+INNER JOIN (
+    VALUES
+    ('ZOHO-TEST-0001','01022094490106020750', 2.0000, 18.5000, 0.0000),
+    ('ZOHO-TEST-0001','01022094490111010750', 1.0000, 17.2500, 0.0000),
+    ('ZOHO-TEST-0002','01022094490205010750', 3.0000, 9.8000, 2.0000),
+    ('ZOHO-TEST-0002','01022094490205020750', 2.0000, 10.4000, 0.0000),
+    ('ZOHO-TEST-0003','01022110330102020750', 4.0000, 11.9000, 3.0000),
+    ('ZOHO-TEST-0003','01022110330103020750', 2.0000, 12.3000, 0.0000),
+    ('ZOHO-TEST-0004','01022113620901010750', 1.0000, 22.5000, 0.0000),
+    ('ZOHO-TEST-0004','01022113621001010750', 2.0000, 20.7500, 1.5000),
+    ('ZOHO-TEST-0005','01022190080206010200', 5.0000, 6.9500, 0.0000),
+    ('ZOHO-TEST-0005','01022190080213010750', 2.0000, 14.2000, 0.0000)
+) x(id_zoho, product, quantity, unit_price, discount)
+    ON o.id_zoho = x.id_zoho;
+GO
+
+-- 20 órdenes adicionales de prueba
+DECLARE @Customers TABLE (idx INT IDENTITY(1,1), code VARCHAR(50));
+INSERT INTO @Customers(code)
+VALUES
+('C0102434438'),
+('C0102493269001'),
+('C0102534328001'),
+('C0102578507001'),
+('C0102622289001'),
+('C0102704871001'),
+('C0102734456001'),
+('C0102833654001'),
+('C0102962545001'),
+('C0102983996001'),
+('C0103030128001'),
+('C0103051108'),
+('C0103106159001'),
+('C0103116174001'),
+('C0103175246001');
+
+DECLARE @Products TABLE (idx INT IDENTITY(1,1), product VARCHAR(150), price DECIMAL(18,4));
+INSERT INTO @Products(product, price)
+VALUES
+('01022094490106020750',18.5000),
+('01022094490111010750',17.2500),
+('01022094490205010750',9.8000),
+('01022094490205020750',10.4000),
+('01022094490205040750',11.1500),
+('01022094490206010750',9.9500),
+('01022110290210010750',48.0000),
+('01022110330101020750',12.1000),
+('01022110330102020750',11.9000),
+('01022110330103020750',12.3000),
+('01022113620901010750',22.5000),
+('01022113621001010750',20.7500),
+('01022114900101010750',75.9000),
+('01022114900103010750',79.9000),
+('01022190080206010200',6.9500),
+('01022190080213010750',14.2000);
+
+DECLARE @ProductCount INT = (SELECT COUNT(1) FROM @Products);
+DECLARE @CustomerCount INT = (SELECT COUNT(1) FROM @Customers);
+
+;WITH N AS (
+    SELECT TOP (20) ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n
+    FROM sys.all_objects
+)
+INSERT INTO SAP_Orders (id_zoho, customer, order_date, is_integrated, is_updated, salesperson)
+SELECT
+    CONCAT('ZOHO-TEST-X', RIGHT('0000' + CAST(n AS VARCHAR(4)), 4)),
+    c.code,
+    DATEADD(MINUTE, -(90 + n), GETDATE()),
+    0,
+    0,
+    CONCAT('VENDEDOR ', RIGHT('00' + CAST(((n - 1) % 5) + 1 AS VARCHAR(2)), 2))
+FROM N
+CROSS APPLY (
+    SELECT code
+    FROM @Customers
+    WHERE idx = ((N.n - 1) % @CustomerCount) + 1
+) c;
+
+;WITH O AS (
+    SELECT id, TRY_CONVERT(INT, RIGHT(id_zoho, 4)) AS n
+    FROM SAP_Orders
+    WHERE id_zoho LIKE 'ZOHO-TEST-X%'
+)
+INSERT INTO SAP_Order_Details (order_id, product, quantity, unit_price, discount, total, tax, notes)
+SELECT
+    O.id,
+    p.product,
+    q.qty,
+    p.price,
+    q.discount,
+    ROUND((q.qty * p.price) * (1 - (q.discount / 100.0)), 4),
+    0,
+    'Seed de prueba masivo (20 órdenes)'
+FROM O
+CROSS APPLY (
+    VALUES
+    ((((O.n - 1) % @ProductCount) + 1), CAST(1 + (O.n % 3) AS DECIMAL(18,4)), CAST(0.0000 AS DECIMAL(18,4))),
+    ((((O.n + 6 - 1) % @ProductCount) + 1), CAST(1 + ((O.n + 1) % 2) AS DECIMAL(18,4)), CAST(2.0000 AS DECIMAL(18,4)))
+) q(product_idx, qty, discount)
+INNER JOIN @Products p ON p.idx = q.product_idx;
+GO
+
+-- Verificación
+SELECT o.id, o.id_zoho, o.customer, o.is_integrated, o.order_date,
+       d.product, d.quantity, d.unit_price, d.discount, d.total
+FROM SAP_Orders o
+INNER JOIN SAP_Order_Details d ON d.order_id = o.id
+WHERE o.id_zoho LIKE 'ZOHO-TEST-%'
+ORDER BY o.id, d.id;
+GO
+```
+
 ## Documentos SAP B1 (BoObjectTypes)
 
 La **orden de venta** en SAP Business One corresponde a:
