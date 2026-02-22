@@ -5,6 +5,10 @@ namespace ConsoleApp2.IntgSAPLibs
 {
     internal sealed class SAPConnection : IDisposable
     {
+        internal const string SqlServerName = "SERVIDORSAP";
+        internal const string SqlUserName = "intg";
+        internal const string SqlPassword = "Horiz0nt3s";
+
         public Company Company { get; }
 
         public SAPConnection()
@@ -17,16 +21,16 @@ namespace ConsoleApp2.IntgSAPLibs
 
         private static void ConfigureConnection(Company company)
         {
-            company.Server = "SERVIDORSAP";
-            company.LicenseServer = "SERVIDORSAP:30000";
+            company.Server = SqlServerName;
+            company.LicenseServer = SqlServerName + ":30000";
             company.CompanyDB = "TEST_VINESA";
             company.DbServerType = BoDataServerTypes.dst_MSSQL2016;
 
             // CAMBIAR DESPUES, NO OLVIDAR
             company.UserName = "auditori";
             company.Password = "1234";
-            company.DbUserName = "intg";
-            company.DbPassword = "Horiz0nt3s";
+            company.DbUserName = SqlUserName;
+            company.DbPassword = SqlPassword;
 
             company.UseTrusted = false;
         }

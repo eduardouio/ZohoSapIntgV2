@@ -56,6 +56,15 @@ sc.exe delete ConsoleApp2Service
 
 - Se ignoraron archivos vacíos/no usados por ahora, como pediste.
 - La lógica SAP se ejecuta al iniciar el servicio y luego cada 5 minutos.
+- Los pedidos se leen desde `DB_INTG_SAPZOHO_PROD` (`SAP_Orders` + `SAP_Order_Details`) filtrando `is_integrated = 0`.
+- Cuando SAP crea la orden correctamente, se actualiza en SQL: `is_integrated = 1`, `integration_date`, `doc_entry`, `doc_num`.
+- Se genera log en: `C:\ProgramData\ConsoleApp2\logs\app.log`
+
+Monitoreo en tiempo real desde PowerShell:
+
+```powershell
+Get-Content "C:\ProgramData\ConsoleApp2\logs\app.log" -Wait
+```
 
 ---
 
@@ -68,14 +77,14 @@ USE DB_INTG_SAPZOHO_PROD;
 GO
 
 CREATE TABLE SAP_Orders (
-    id INT IDENTITY(1,1) PRIMARY KEY,
+    id INT IDENTITY(1,1) PRIMARY KEY, 
     id_zoho VARCHAR(50) NOT NULL,
-    cliente VARCHAR(150) NOT NULL,
-    fecha_orden DATETIME NOT NULL,
-    estado VARCHAR(50) NOT NULL,
-    integrado BIT NOT NULL DEFAULT 0,
-    fecha_integracion DATETIME NULL,
-    vendedor VARCHAR(150) NULL,
+    customer VARCHAR(150) NOT NULL,
+    order_date DATETIME NOT NULL,
+    integration_date DATETIME NULL,
+    is_integrated BIT NOT NULL DEFAULT 0, -- si se integro con SAP o no
+    is_updated BIT NOT NULL DEFAULT 0, -- si esta actulizada desde la ultima integracion si lo esta se debe actualizar en SAP y volver a poner este campo en 0
+    salesperson VARCHAR(150) NULL,
     serie INT NULL,
     doc_num INT NULL,
     doc_entry INT NULL,
@@ -86,15 +95,15 @@ GO
 CREATE TABLE SAP_Order_Details (
     id INT IDENTITY(1,1) PRIMARY KEY,
     order_id INT NOT NULL,
-    producto VARCHAR(150) NOT NULL,
-    cantidad DECIMAL(18,4) NOT NULL,
-    precio_unitario DECIMAL(18,4) NOT NULL,
-    descuento DECIMAL(18,4) NOT NULL DEFAULT 0,
+    product VARCHAR(150) NOT NULL,
+    quantity DECIMAL(18,4) NOT NULL,
+    unit_price DECIMAL(18,4) NOT NULL,
+    discount DECIMAL(18,4) NOT NULL DEFAULT 0,
     total DECIMAL(18,4) NOT NULL,
-    impuesto DECIMAL(18,4) NOT NULL DEFAULT 0,
-    centro_costos VARCHAR(50) NULL,
-    cuenta_contable VARCHAR(50) NULL,
-    observaciones VARCHAR(500) NULL,
+    tax DECIMAL(18,4) NOT NULL DEFAULT 0,
+    cost_center VARCHAR(50) NULL,
+    account VARCHAR(50) NULL,
+    notes VARCHAR(500) NULL,
     created_at DATETIME NOT NULL DEFAULT GETDATE(),
     CONSTRAINT FK_SAP_Order_Details_Order
         FOREIGN KEY (order_id)

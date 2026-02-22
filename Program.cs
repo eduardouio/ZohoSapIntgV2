@@ -31,10 +31,37 @@ namespace ConsoleApp2
             {
                 using (var sapConnection = new SAPConnection())
                 {
-                    WriteInfo("Conectado correctamente");
+                    WriteInfo("Conectado correctamente a SAP");
                     var salesOrderManager = new SalesOrderManager(sapConnection.Company);
-                    string docEntry = salesOrderManager.CrearOrdenVentaPrueba();
-                    WriteInfo("Orden de venta creada exitosamente. DocEntry: " + docEntry);
+                    var repository = new SqlOrderRepository();
+
+                    WriteInfo("Buscando pedidos pendientes por importar...");
+                    var pendingOrders = repository.GetPendingOrders();
+
+                    WriteInfo("Pedidos pendientes encontrados: " + pendingOrders.Count);
+
+                    if (pendingOrders.Count == 0)
+                    {
+                        WriteInfo("No hay pedidos pendientes para importar en este ciclo.");
+                        return;
+                    }
+
+                    WriteInfo("Iniciando importación de " + pendingOrders.Count + " pedido(s).");
+
+                    foreach (var order in pendingOrders)
+                    {
+                        try
+                        {
+                            var result = salesOrderManager.CrearOrdenVenta(order);
+                            repository.MarkOrderIntegrated(order.Id, result.DocEntry, result.DocNum);
+
+                            WriteInfo("Pedido integrado. order_id=" + order.Id + " docEntry=" + result.DocEntry + " docNum=" + result.DocNum);
+                        }
+                        catch (Exception orderEx)
+                        {
+                            FileLogger.Error("Error integrando pedido order_id=" + order.Id + ". Se continuará con el siguiente.", orderEx);
+                        }
+                    }
                 }
             }
             catch (Exception ex)

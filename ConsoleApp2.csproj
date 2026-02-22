@@ -75,8 +75,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IntgSAPLibs\FileLogger.cs" />
+    <Compile Include="IntgSAPLibs\IntegrationOrder.cs" />
+    <Compile Include="IntgSAPLibs\IntegrationOrderDetail.cs" />
     <Compile Include="IntgSAPLibs\SAPConnection.cs" />
+    <Compile Include="IntgSAPLibs\SapOrderResult.cs" />
     <Compile Include="IntgSAPLibs\SalesOrderManager.cs" />
+    <Compile Include="IntgSAPLibs\SqlOrderRepository.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

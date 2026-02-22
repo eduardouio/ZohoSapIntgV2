@@ -22,23 +22,44 @@ namespace ConsoleApp2.IntgSAPLibs
             _company = company;
         }
 
-        public string CrearOrdenVentaPrueba()
+        public SapOrderResult CrearOrdenVenta(IntegrationOrder order)
         {
-            FileLogger.Info("Iniciando creación de orden de venta de prueba.");
+            if (order == null)
+            {
+                throw new ArgumentNullException(nameof(order));
+            }
+
+            if (order.Details == null || order.Details.Count == 0)
+            {
+                throw new InvalidOperationException("La orden no tiene detalles para integrar a SAP.");
+            }
+
+            FileLogger.Info("Iniciando creación de orden SAP para order_id: " + order.Id);
 
             var salesOrder = (Documents)_company.GetBusinessObject(BoObjectTypes.oOrders);
-            salesOrder.CardCode = "C1790016919001";
-            salesOrder.FederalTaxID = "1790016919001";
-            salesOrder.DocDate = DateTime.Now;
-            salesOrder.DocDueDate = DateTime.Now.AddDays(7);
-            salesOrder.TaxDate = DateTime.Now.AddDays(7);
-            salesOrder.Comments = "Orden de venta de prueba creada desde la API";
-
-            salesOrder.Lines.ItemCode = "01011010010206010750";
-            salesOrder.Lines.Quantity = 904000;
-            salesOrder.Lines.WarehouseCode = "1";
+            salesOrder.CardCode = order.Customer;
+            salesOrder.DocDate = order.OrderDate;
+            salesOrder.DocDueDate = order.OrderDate;
+            salesOrder.TaxDate = order.OrderDate;
+            salesOrder.Comments = "Integración SQL order_id=" + order.Id + " zoho_id=" + (order.ZohoId ?? string.Empty);
             salesOrder.DocObjectCode = BoObjectTypes.oOrders;
-            salesOrder.Lines.Add();
+
+            for (int lineIndex = 0; lineIndex < order.Details.Count; lineIndex++)
+            {
+                var detail = order.Details[lineIndex];
+
+                if (lineIndex > 0)
+                {
+                    salesOrder.Lines.Add();
+                }
+
+                salesOrder.Lines.SetCurrentLine(lineIndex);
+                salesOrder.Lines.ItemCode = detail.Product;
+                salesOrder.Lines.Quantity = (double)detail.Quantity;
+                salesOrder.Lines.UnitPrice = (double)detail.UnitPrice;
+                salesOrder.Lines.DiscountPercent = (double)detail.Discount;
+                salesOrder.Lines.WarehouseCode = "1";
+            }
 
             int addResult = salesOrder.Add();
             if (addResult != 0)
@@ -46,10 +67,29 @@ namespace ConsoleApp2.IntgSAPLibs
                 throw new InvalidOperationException("Error al crear la orden de venta: " + _company.GetLastErrorDescription());
             }
 
-            string docEntry;
-            _company.GetNewObjectCode(out docEntry);
-            FileLogger.Info("Orden de venta creada. DocEntry: " + docEntry);
-            return docEntry;
+            string newDocEntry;
+            _company.GetNewObjectCode(out newDocEntry);
+
+            int docEntryValue;
+            if (!int.TryParse(newDocEntry, out docEntryValue))
+            {
+                throw new InvalidOperationException("No se pudo convertir el DocEntry retornado por SAP: " + newDocEntry);
+            }
+
+            int docNumValue = 0;
+            var createdOrder = (Documents)_company.GetBusinessObject(BoObjectTypes.oOrders);
+            if (createdOrder.GetByKey(docEntryValue))
+            {
+                docNumValue = createdOrder.DocNum;
+            }
+
+            FileLogger.Info("Orden de venta creada. order_id=" + order.Id + " docEntry=" + docEntryValue + " docNum=" + docNumValue);
+
+            return new SapOrderResult
+            {
+                DocEntry = docEntryValue,
+                DocNum = docNumValue
+            };
         }
     }
 }
