@@ -28,6 +28,33 @@ msbuild .\ZhohoSapIntg.csproj /t:Build /p:Configuration=Debug /p:Platform=AnyCPU
 
 Este modo permite hacer pruebas rápidas durante desarrollo.
 
+## Configuración multiempresa (`App.config`)
+
+Ahora la integración procesa pedidos por cada empresa configurada, filtrando en SQL por:
+
+- `enterprise`
+- `id_warehouse`
+
+La configuración se define en `App.config` con estas claves:
+
+- `SqlServerName`, `SqlUserName`, `SqlPassword`, `IntegrationDatabase`
+- `SapServer`, `SapLicenseServer`, `SapDbServerType`, `SapUserName`, `SapPassword`
+- `EnterpriseMappings`
+
+Formato de `EnterpriseMappings`:
+
+```txt
+ENTERPRISE|SAP_COMPANY_DB|WAREHOUSE_ID;ENTERPRISE2|SAP_COMPANY_DB2|WAREHOUSE_ID2
+```
+
+Ejemplo:
+
+```txt
+VINESA|TEST_VINESA|1;PLUSBRABD|TEST_PLUSBRABD|1;SERVMULTIMARC|TEST_SERVMULTIMARC|1;VINLITORAL|TEST_VINLITORAL|1
+```
+
+El mapeo de bases SAP queda externalizado para que en producción solo cambies `App.config`.
+
 ## Instalar y ejecutar como servicio de Windows
 
 Ejecuta PowerShell como **Administrador**.
@@ -348,3 +375,16 @@ Error al crear la orden de venta: (1009) Codigo : 01011010010206010750 con saldo
     ]
 }
 ```
+
+
+```sql
+USE master;
+GO
+
+-- Cerrar todas las conexiones activas a la base de datos
+ALTER DATABASE DB_INTG_SAPZOHO_PROD SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+GO
+
+-- Eliminar la base de datos
+DROP DATABASE DB_INTG_SAPZOHO_PROD;
+GO

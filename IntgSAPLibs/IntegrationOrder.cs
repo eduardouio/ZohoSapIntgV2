@@ -15,6 +15,10 @@ namespace ZhohoSapIntg.IntgSAPLibs
 
         public string Salesperson { get; set; }
 
+        public string Enterprise { get; set; }
+
+        public int IdWarehouse { get; set; }
+
         public int? DocEntry { get; set; }
 
         public int? DocNum { get; set; }

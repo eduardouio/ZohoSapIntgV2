@@ -5,32 +5,36 @@ namespace ZhohoSapIntg.IntgSAPLibs
 {
     internal sealed class SAPConnection : IDisposable
     {
-        internal const string SqlServerName = "SERVIDORSAP";
-        internal const string SqlUserName = "intg";
-        internal const string SqlPassword = "Horiz0nt3s";
-
         public Company Company { get; }
 
-        public SAPConnection()
+        public SAPConnection(IntegrationSettings settings, EnterpriseSapTarget target)
         {
+            if (settings == null)
+            {
+                throw new ArgumentNullException(nameof(settings));
+            }
+
+            if (target == null)
+            {
+                throw new ArgumentNullException(nameof(target));
+            }
+
             Company = new Company();
-            ConfigureConnection(Company);
+            ConfigureConnection(Company, settings, target);
             Connect(Company);
-            FileLogger.Info("Conexión SAP establecida correctamente.");
+            FileLogger.Info("Conexión SAP establecida correctamente para enterprise=" + target.EnterpriseCode + " db=" + target.CompanyDatabase + ".");
         }
 
-        private static void ConfigureConnection(Company company)
+        private static void ConfigureConnection(Company company, IntegrationSettings settings, EnterpriseSapTarget target)
         {
-            company.Server = SqlServerName;
-            company.LicenseServer = SqlServerName + ":30000";
-            company.CompanyDB = "TEST_VINESA";
-            company.DbServerType = BoDataServerTypes.dst_MSSQL2016;
-
-            // CAMBIAR DESPUES, NO OLVIDAR
-            company.UserName = "auditori";
-            company.Password = "1234";
-            company.DbUserName = SqlUserName;
-            company.DbPassword = SqlPassword;
+            company.Server = settings.SapServer;
+            company.LicenseServer = settings.SapLicenseServer;
+            company.CompanyDB = target.CompanyDatabase;
+            company.DbServerType = settings.SapDbServerType;
+            company.UserName = settings.SapUserName;
+            company.Password = settings.SapPassword;
+            company.DbUserName = settings.SqlUserName;
+            company.DbPassword = settings.SqlPassword;
 
             company.UseTrusted = false;
         }

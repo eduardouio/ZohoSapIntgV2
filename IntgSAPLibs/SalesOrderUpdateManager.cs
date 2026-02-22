@@ -70,7 +70,7 @@ namespace ZhohoSapIntg.IntgSAPLibs
                 sapOrder.Lines.Quantity = (double)detail.Quantity;
                 sapOrder.Lines.UnitPrice = (double)detail.UnitPrice;
                 sapOrder.Lines.DiscountPercent = (double)detail.Discount;
-                sapOrder.Lines.WarehouseCode = "1";
+                sapOrder.Lines.WarehouseCode = order.IdWarehouse.ToString();
             }
 
             for (int lineIndex = existingLineCount - 1; lineIndex >= order.Details.Count; lineIndex--)

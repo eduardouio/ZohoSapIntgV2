@@ -58,7 +58,7 @@ namespace ZhohoSapIntg.IntgSAPLibs
                 salesOrder.Lines.Quantity = (double)detail.Quantity;
                 salesOrder.Lines.UnitPrice = (double)detail.UnitPrice;
                 salesOrder.Lines.DiscountPercent = (double)detail.Discount;
-                salesOrder.Lines.WarehouseCode = "1";
+                salesOrder.Lines.WarehouseCode = order.IdWarehouse.ToString();
             }
 
             int addResult = salesOrder.Add();

@@ -29,86 +29,12 @@ namespace ZhohoSapIntg
             FileLogger.Info("Inicia proceso SAP.");
             try
             {
-                using (var sapConnection = new SAPConnection())
+                var settings = IntegrationSettings.LoadFromAppConfig();
+                var repository = new SqlOrderRepository(settings);
+
+                foreach (var target in settings.EnterpriseTargets)
                 {
-                    WriteInfo("Conectado correctamente a SAP");
-                    var salesOrderManager = new SalesOrderManager(sapConnection.Company);
-                    var salesOrderUpdateManager = new SalesOrderUpdateManager(sapConnection.Company);
-                    var repository = new SqlOrderRepository();
-
-                    WriteInfo("Buscando pedidos pendientes por actualizar...");
-                    var ordersToUpdate = repository.GetOrdersToUpdate();
-                    WriteInfo("Pedidos para actualizar encontrados: " + ordersToUpdate.Count);
-
-                    int updatedCount = 0;
-                    int updateFailedCount = 0;
-
-                    foreach (var order in ordersToUpdate)
-                    {
-                        try
-                        {
-                            salesOrderUpdateManager.ActualizarOrdenVenta(order);
-                            repository.MarkOrderUpdated(order.Id);
-                            updatedCount++;
-                            WriteInfo("Pedido actualizado. order_id=" + order.Id + " docEntry=" + order.DocEntry);
-                        }
-                        catch (Exception updateEx)
-                        {
-                            updateFailedCount++;
-                            try
-                            {
-                                repository.MarkOrderUpdateFailed(order.Id, updateEx.Message);
-                            }
-                            catch (Exception persistEx)
-                            {
-                                FileLogger.Error("No se pudo persistir estado de fallo para actualización order_id=" + order.Id + ".", persistEx);
-                            }
-                            FileLogger.Error("Error actualizando pedido order_id=" + order.Id + ". Se continuará con el siguiente.", updateEx);
-                        }
-                    }
-
-                    WriteInfo("Buscando pedidos pendientes por importar...");
-                    var pendingOrders = repository.GetPendingOrders();
-
-                    WriteInfo("Pedidos pendientes encontrados: " + pendingOrders.Count);
-
-                    if (pendingOrders.Count == 0 && ordersToUpdate.Count == 0)
-                    {
-                        WriteInfo("No hay pedidos pendientes por crear ni por actualizar en este ciclo.");
-                        return;
-                    }
-
-                    WriteInfo("Iniciando importación de " + pendingOrders.Count + " pedido(s).");
-                    int importedCount = 0;
-                    int failedCount = 0;
-
-                    foreach (var order in pendingOrders)
-                    {
-                        try
-                        {
-                            var result = salesOrderManager.CrearOrdenVenta(order);
-                            repository.MarkOrderIntegrated(order.Id, result.DocEntry, result.DocNum);
-
-                            WriteInfo("Pedido integrado. order_id=" + order.Id + " docEntry=" + result.DocEntry + " docNum=" + result.DocNum);
-                            importedCount++;
-                        }
-                        catch (Exception orderEx)
-                        {
-                            failedCount++;
-                            try
-                            {
-                                repository.MarkOrderCreateFailed(order.Id, orderEx.Message);
-                            }
-                            catch (Exception persistEx)
-                            {
-                                FileLogger.Error("No se pudo persistir estado de fallo para creación order_id=" + order.Id + ".", persistEx);
-                            }
-                            FileLogger.Error("Error integrando pedido order_id=" + order.Id + ". Se continuará con el siguiente.", orderEx);
-                        }
-                    }
-
-                    WriteInfo("Resumen de creación: total=" + pendingOrders.Count + ", importados=" + importedCount + ", fallidos=" + failedCount + ".");
-                    WriteInfo("Resumen de actualización: total=" + ordersToUpdate.Count + ", actualizados=" + updatedCount + ", fallidos=" + updateFailedCount + ".");
+                    ProcessEnterprise(repository, settings, target);
                 }
             }
             catch (Exception ex)
@@ -140,6 +66,89 @@ namespace ZhohoSapIntg
             if (Environment.UserInteractive)
             {
                 Console.WriteLine(message);
+            }
+        }
+
+        private static void ProcessEnterprise(SqlOrderRepository repository, IntegrationSettings settings, EnterpriseSapTarget target)
+        {
+            WriteInfo("Procesando enterprise=" + target.EnterpriseCode + " warehouse=" + target.WarehouseId + " db=" + target.CompanyDatabase + ".");
+
+            WriteInfo("Buscando pedidos pendientes por actualizar para enterprise=" + target.EnterpriseCode + "...");
+            var ordersToUpdate = repository.GetOrdersToUpdate(target.EnterpriseCode, target.WarehouseId);
+            WriteInfo("Pedidos para actualizar encontrados: " + ordersToUpdate.Count + " enterprise=" + target.EnterpriseCode + ".");
+
+            WriteInfo("Buscando pedidos pendientes por importar para enterprise=" + target.EnterpriseCode + "...");
+            var pendingOrders = repository.GetPendingOrders(target.EnterpriseCode, target.WarehouseId);
+            WriteInfo("Pedidos pendientes encontrados: " + pendingOrders.Count + " enterprise=" + target.EnterpriseCode + ".");
+
+            if (pendingOrders.Count == 0 && ordersToUpdate.Count == 0)
+            {
+                WriteInfo("No hay pedidos pendientes para enterprise=" + target.EnterpriseCode + ".");
+                return;
+            }
+
+            using (var sapConnection = new SAPConnection(settings, target))
+            {
+                WriteInfo("Conectado correctamente a SAP para enterprise=" + target.EnterpriseCode + ".");
+
+                var salesOrderManager = new SalesOrderManager(sapConnection.Company);
+                var salesOrderUpdateManager = new SalesOrderUpdateManager(sapConnection.Company);
+
+                int updatedCount = 0;
+                int updateFailedCount = 0;
+                foreach (var order in ordersToUpdate)
+                {
+                    try
+                    {
+                        salesOrderUpdateManager.ActualizarOrdenVenta(order);
+                        repository.MarkOrderUpdated(order.Id);
+                        updatedCount++;
+                        WriteInfo("Pedido actualizado. enterprise=" + target.EnterpriseCode + " order_id=" + order.Id + " docEntry=" + order.DocEntry);
+                    }
+                    catch (Exception updateEx)
+                    {
+                        updateFailedCount++;
+                        try
+                        {
+                            repository.MarkOrderUpdateFailed(order.Id, updateEx.Message);
+                        }
+                        catch (Exception persistEx)
+                        {
+                            FileLogger.Error("No se pudo persistir estado de fallo para actualización order_id=" + order.Id + " enterprise=" + target.EnterpriseCode + ".", persistEx);
+                        }
+                        FileLogger.Error("Error actualizando pedido order_id=" + order.Id + " enterprise=" + target.EnterpriseCode + ". Se continuará con el siguiente.", updateEx);
+                    }
+                }
+
+                int importedCount = 0;
+                int failedCount = 0;
+                foreach (var order in pendingOrders)
+                {
+                    try
+                    {
+                        var result = salesOrderManager.CrearOrdenVenta(order);
+                        repository.MarkOrderIntegrated(order.Id, result.DocEntry, result.DocNum);
+
+                        WriteInfo("Pedido integrado. enterprise=" + target.EnterpriseCode + " order_id=" + order.Id + " docEntry=" + result.DocEntry + " docNum=" + result.DocNum);
+                        importedCount++;
+                    }
+                    catch (Exception orderEx)
+                    {
+                        failedCount++;
+                        try
+                        {
+                            repository.MarkOrderCreateFailed(order.Id, orderEx.Message);
+                        }
+                        catch (Exception persistEx)
+                        {
+                            FileLogger.Error("No se pudo persistir estado de fallo para creación order_id=" + order.Id + " enterprise=" + target.EnterpriseCode + ".", persistEx);
+                        }
+                        FileLogger.Error("Error integrando pedido order_id=" + order.Id + " enterprise=" + target.EnterpriseCode + ". Se continuará con el siguiente.", orderEx);
+                    }
+                }
+
+                WriteInfo("Resumen enterprise=" + target.EnterpriseCode + " creación: total=" + pendingOrders.Count + ", importados=" + importedCount + ", fallidos=" + failedCount + ".");
+                WriteInfo("Resumen enterprise=" + target.EnterpriseCode + " actualización: total=" + ordersToUpdate.Count + ", actualizados=" + updatedCount + ", fallidos=" + updateFailedCount + ".");
             }
         }
 

@@ -6,17 +6,21 @@ namespace ZhohoSapIntg.IntgSAPLibs
 {
     internal sealed class SqlOrderRepository
     {
-        private const string IntegrationDatabase = "DB_INTG_SAPZOHO_PROD";
         private readonly string _connectionString;
 
-        public SqlOrderRepository()
+        public SqlOrderRepository(IntegrationSettings settings)
         {
+            if (settings == null)
+            {
+                throw new ArgumentNullException(nameof(settings));
+            }
+
             var builder = new SqlConnectionStringBuilder
             {
-                DataSource = SAPConnection.SqlServerName,
-                InitialCatalog = IntegrationDatabase,
-                UserID = SAPConnection.SqlUserName,
-                Password = SAPConnection.SqlPassword,
+                DataSource = settings.SqlServerName,
+                InitialCatalog = settings.IntegrationDatabase,
+                UserID = settings.SqlUserName,
+                Password = settings.SqlPassword,
                 IntegratedSecurity = false,
                 ConnectTimeout = 15
             };
@@ -24,7 +28,7 @@ namespace ZhohoSapIntg.IntgSAPLibs
             _connectionString = builder.ConnectionString;
         }
 
-        public List<IntegrationOrder> GetPendingOrders()
+        public List<IntegrationOrder> GetPendingOrders(string enterprise, int warehouseId)
         {
             const string query = @"
 SELECT
@@ -35,6 +39,8 @@ SELECT
     o.doc_entry,
     o.doc_num,
     o.salesperson,
+    o.enterprise,
+    o.id_warehouse,
     d.id AS detail_id,
     d.order_id,
     d.product,
@@ -45,12 +51,14 @@ FROM SAP_Orders o
 LEFT JOIN SAP_Order_Details d ON d.order_id = o.id
 WHERE o.is_integrated = 0
     AND o.is_failed = 0
+    AND o.enterprise = @enterprise
+    AND o.id_warehouse = @warehouseId
 ORDER BY o.id, d.id;";
 
-            return GetOrdersByQuery(query);
+            return GetOrdersByQuery(query, enterprise, warehouseId);
         }
 
-        public List<IntegrationOrder> GetOrdersToUpdate()
+        public List<IntegrationOrder> GetOrdersToUpdate(string enterprise, int warehouseId)
         {
             const string query = @"
 SELECT
@@ -61,6 +69,8 @@ SELECT
     o.doc_entry,
     o.doc_num,
     o.salesperson,
+    o.enterprise,
+    o.id_warehouse,
     d.id AS detail_id,
     d.order_id,
     d.product,
@@ -72,19 +82,24 @@ LEFT JOIN SAP_Order_Details d ON d.order_id = o.id
 WHERE o.is_integrated = 1
   AND o.is_updated = 1
     AND o.is_failed = 0
+    AND o.enterprise = @enterprise
+    AND o.id_warehouse = @warehouseId
   AND o.doc_entry IS NOT NULL
 ORDER BY o.id, d.id;";
 
-            return GetOrdersByQuery(query);
+                        return GetOrdersByQuery(query, enterprise, warehouseId);
         }
 
-        private List<IntegrationOrder> GetOrdersByQuery(string query)
+                private List<IntegrationOrder> GetOrdersByQuery(string query, string enterprise, int warehouseId)
         {
             var ordersById = new Dictionary<int, IntegrationOrder>();
 
             using (var connection = new SqlConnection(_connectionString))
             using (var command = new SqlCommand(query, connection))
             {
+                                command.Parameters.AddWithValue("@enterprise", enterprise);
+                                command.Parameters.AddWithValue("@warehouseId", warehouseId);
+
                 connection.Open();
                 using (var reader = command.ExecuteReader())
                 {
@@ -102,7 +117,9 @@ ORDER BY o.id, d.id;";
                                 OrderDate = reader.GetDateTime(reader.GetOrdinal("order_date")),
                                 DocEntry = reader["doc_entry"] == DBNull.Value ? (int?)null : reader.GetInt32(reader.GetOrdinal("doc_entry")),
                                 DocNum = reader["doc_num"] == DBNull.Value ? (int?)null : reader.GetInt32(reader.GetOrdinal("doc_num")),
-                                Salesperson = reader["salesperson"] as string
+                                Salesperson = reader["salesperson"] as string,
+                                Enterprise = reader["enterprise"] as string,
+                                IdWarehouse = reader.GetInt32(reader.GetOrdinal("id_warehouse"))
                             };
 
                             ordersById.Add(orderId, order);

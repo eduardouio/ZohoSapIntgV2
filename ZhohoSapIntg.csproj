@@ -63,6 +63,7 @@
     <OutputPath>bin\x86\Release\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="System.Configuration" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.ServiceProcess" />
@@ -75,6 +76,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IntgSAPLibs\FileLogger.cs" />
+    <Compile Include="IntgSAPLibs\IntegrationSettings.cs" />
     <Compile Include="IntgSAPLibs\IntegrationOrder.cs" />
     <Compile Include="IntgSAPLibs\IntegrationOrderDetail.cs" />
     <Compile Include="IntgSAPLibs\SAPConnection.cs" />
