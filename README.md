@@ -1,4 +1,4 @@
-# ConsoleApp2 como servicio (.NET Framework)
+# ZhohoSapIntg como servicio (.NET Framework)
 
 Este proyecto se migró de consola a **servicio de Windows**, manteniendo **.NET Framework 4.6**.
 
@@ -11,19 +11,19 @@ Este proyecto se migró de consola a **servicio de Windows**, manteniendo **.NET
 Opción recomendada (si tienes SDK .NET instalado):
 
 ```powershell
-dotnet build .\ConsoleApp2.csproj -c Debug
+dotnet build .\ZhohoSapIntg.csproj -c Debug
 ```
 
 Opción alternativa (si tienes MSBuild en PATH):
 
 ```powershell
-msbuild .\ConsoleApp2.csproj /t:Build /p:Configuration=Debug /p:Platform=AnyCPU
+msbuild .\ZhohoSapIntg.csproj /t:Build /p:Configuration=Debug /p:Platform=AnyCPU
 ```
 
 ### 2) Probar en modo consola (sin instalar servicio)
 
 ```powershell
-.\bin\Debug\ConsoleApp2.exe --console
+.\bin\Debug\ZhohoSapIntg.exe --console
 ```
 
 Este modo permite hacer pruebas rápidas durante desarrollo.
@@ -35,21 +35,21 @@ Ejecuta PowerShell como **Administrador**.
 ### 1) Crear servicio
 
 ```powershell
-$exePath = (Resolve-Path ".\bin\Debug\ConsoleApp2.exe").Path
-sc.exe create ConsoleApp2Service binPath= "\"$exePath\"" start= auto
+$exePath = (Resolve-Path ".\bin\Debug\ZhohoSapIntg.exe").Path
+sc.exe create ZhohoSapIntgService binPath= "\"$exePath\"" start= auto
 ```
 
 ### 2) Iniciar servicio
 
 ```powershell
-sc.exe start ConsoleApp2Service
+sc.exe start ZhohoSapIntgService
 ```
 
 ### 3) Detener y eliminar servicio
 
 ```powershell
-sc.exe stop ConsoleApp2Service
-sc.exe delete ConsoleApp2Service
+sc.exe stop ZhohoSapIntgService
+sc.exe delete ZhohoSapIntgService
 ```
 
 ## Notas
@@ -58,12 +58,12 @@ sc.exe delete ConsoleApp2Service
 - La lógica SAP se ejecuta al iniciar el servicio y luego cada 5 minutos.
 - Los pedidos se leen desde `DB_INTG_SAPZOHO_PROD` (`SAP_Orders` + `SAP_Order_Details`) filtrando `is_integrated = 0`.
 - Cuando SAP crea la orden correctamente, se actualiza en SQL: `is_integrated = 1`, `integration_date`, `doc_entry`, `doc_num`.
-- Se genera log en: `C:\ProgramData\ConsoleApp2\logs\app.log`
+- Se genera log en: `C:\ProgramData\ZhohoSapIntg\logs\app.log`
 
 Monitoreo en tiempo real desde PowerShell:
 
 ```powershell
-Get-Content "C:\ProgramData\ConsoleApp2\logs\app.log" -Wait
+Get-Content "C:\ProgramData\ZhohoSapIntg\logs\app.log" -Wait
 ```
 
 ---
