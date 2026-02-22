@@ -309,8 +309,6 @@ Error al crear la orden de venta: (1009) Codigo : 01011010010206010750 con saldo
 
 ## JSON de muestra para endpoint (recepción de pedidos)
 
-> Este JSON **no incluye variables de estado** (`is_integrated`, `is_failed`, `is_updated`, `is_mail_send`, `mail_send_date`, `integration_date`, `error_message`) porque esas las controla el proyecto internamente.
-
 ```json
 {
     "id_zoho": "ZOHO-API-0001",
