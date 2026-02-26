@@ -39,6 +39,8 @@ SELECT
     o.doc_entry,
     o.doc_num,
     o.salesperson,
+    o.seler_id,
+    o.notes,
     o.enterprise,
     o.id_warehouse,
     d.id AS detail_id,
@@ -69,6 +71,8 @@ SELECT
     o.doc_entry,
     o.doc_num,
     o.salesperson,
+    o.seler_id,
+    o.notes,
     o.enterprise,
     o.id_warehouse,
     d.id AS detail_id,
@@ -118,6 +122,8 @@ ORDER BY o.id, d.id;";
                                 DocEntry = reader["doc_entry"] == DBNull.Value ? (int?)null : reader.GetInt32(reader.GetOrdinal("doc_entry")),
                                 DocNum = reader["doc_num"] == DBNull.Value ? (int?)null : reader.GetInt32(reader.GetOrdinal("doc_num")),
                                 Salesperson = reader["salesperson"] as string,
+                                SelerId = reader["seler_id"] == DBNull.Value ? 0 : Convert.ToInt32(reader["seler_id"]),
+                                Notes = reader["notes"] as string,
                                 Enterprise = reader["enterprise"] as string,
                                 IdWarehouse = reader.GetInt32(reader.GetOrdinal("id_warehouse"))
                             };

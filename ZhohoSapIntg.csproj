@@ -83,6 +83,7 @@
     <Compile Include="IntgSAPLibs\SapOrderResult.cs" />
     <Compile Include="IntgSAPLibs\SalesOrderManager.cs" />
     <Compile Include="IntgSAPLibs\SalesOrderUpdateManager.cs" />
+    <Compile Include="IntgSAPLibs\SalesPersonResolver.cs" />
     <Compile Include="IntgSAPLibs\SqlOrderRepository.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

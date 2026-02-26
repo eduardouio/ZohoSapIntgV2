@@ -47,15 +47,27 @@ namespace ZhohoSapIntg.IntgSAPLibs
                 throw new InvalidOperationException("No se encontró la orden en SAP para docEntry=" + order.DocEntry.Value);
             }
 
+            // Actualizar datos del documento: cliente, fechas, comentarios y vendedor
             sapOrder.CardCode = order.Customer;
             sapOrder.DocDate = order.OrderDate;
             sapOrder.DocDueDate = order.OrderDate;
             sapOrder.TaxDate = order.OrderDate;
-            sapOrder.Comments = "Actualización SQL order_id=" + order.Id + " zoho_id=" + (order.ZohoId ?? string.Empty);
 
-            // Asignar vendedor desde OSLP
+            // Usar notes como comentarios si están disponibles
+            if (!string.IsNullOrWhiteSpace(order.Notes))
+            {
+                sapOrder.Comments = order.Notes;
+            }
+            else
+            {
+                sapOrder.Comments = "Actualización SQL order_id=" + order.Id + " zoho_id=" + (order.ZohoId ?? string.Empty);
+            }
+
+            // Asignar vendedor desde OSLP (prioridad: seler_id > salesperson name)
             var resolver = new SalesPersonResolver(_company);
-            int slpCode = resolver.ResolveSlpCode(order.Salesperson);
+            int slpCode = order.SelerId > 0
+                ? resolver.ResolveSlpCode(order.SelerId.ToString())
+                : resolver.ResolveSlpCode(order.Salesperson);
             if (slpCode >= 0)
             {
                 sapOrder.SalesPersonCode = slpCode;

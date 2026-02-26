@@ -41,12 +41,22 @@ namespace ZhohoSapIntg.IntgSAPLibs
             salesOrder.DocDate = order.OrderDate;
             salesOrder.DocDueDate = order.OrderDate;
             salesOrder.TaxDate = order.OrderDate;
-            salesOrder.Comments = "Integración SQL order_id=" + order.Id + " zoho_id=" + (order.ZohoId ?? string.Empty);
+            // Usar notes como comentarios si están disponibles, sino usar referencia estándar
+            if (!string.IsNullOrWhiteSpace(order.Notes))
+            {
+                salesOrder.Comments = order.Notes;
+            }
+            else
+            {
+                salesOrder.Comments = "Integración SQL order_id=" + order.Id + " zoho_id=" + (order.ZohoId ?? string.Empty);
+            }
             salesOrder.DocObjectCode = BoObjectTypes.oOrders;
 
-            // Asignar vendedor desde OSLP
+            // Asignar vendedor desde OSLP (prioridad: seler_id > salesperson name)
             var resolver = new SalesPersonResolver(_company);
-            int slpCode = resolver.ResolveSlpCode(order.Salesperson);
+            int slpCode = order.SelerId > 0
+                ? resolver.ResolveSlpCode(order.SelerId.ToString())
+                : resolver.ResolveSlpCode(order.Salesperson);
             if (slpCode >= 0)
             {
                 salesOrder.SalesPersonCode = slpCode;
