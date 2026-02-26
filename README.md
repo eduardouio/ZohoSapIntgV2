@@ -96,6 +96,40 @@ Monitoreo en tiempo real desde PowerShell:
 Get-Content "C:\ProgramData\ZhohoSapIntg\logs\app.log" -Wait
 ```
 
+## Mapeo de Vendedores, Empresas y Bodegas
+
+| NOMBRE VENDEDOR | SELER ID | CORREO | EMPRESA | BODEGA | SAP ID |
+|---|---:|---|---|---|---:|
+| Alejandro Padovan | 35 | apadovan@vinesa.com.ec | VINESA | ALMACÉN GENERAL UIO | 1 |
+| Edwin Ortega | 29 | eortega@vinesa.com.ec | VINESA | ALMACÉN GENERAL UIO | 1 |
+| José Luis Rivera | 28 | jrivera@vinesa.com.ec | VINESA | ALMACÉN GENERAL UIO | 1 |
+| Jessica López | 25 | jlopez@vinesa.com.ec | VINESA | ALMACÉN GENERAL UIO | 1 |
+| Cristhian Arguello | 37 | carguello@vinesa.com.ec | VINESA | BODEGA MANTA | 15 |
+| Masaki Hakamada | 36 | mhakamada@vinesa.com.ec | VINESA | BODEGA MANTA | 15 |
+| Fernando Lituma | 31 | flituma@vinesa.com.ec | VINESA | BODEGA CUENCA | 8 |
+| Henry Rojas | 33 | hrojas@vinlitoral.com.ec | VINLITORAL | BODEGA GENERAL G8 | 05 |
+| Vanessa Cevallos | 39 | vcevallos@vinlitoral.com.ec | VINLITORAL | BODEGA GENERAL G8 | 05 |
+| Paola Rossero | 28 | prossero@vinlitoral.com.ec | VINLITORAL | BODEGA GENERAL G8 | 05 |
+| Marjorie Cedeño | 32 | mcedeno@vinlitoral.com.ec | VINLITORAL | BODEGA GENERAL G8 | 05 |
+| Marjorie Cano | 42 | mcano@vinlitoral.com.ec | VINLITORAL | BODEGA GENERAL G8 | 05 |
+| Miguel Mora | 48 | mmora@vinlitoral.com.ec | VINLITORAL | BODEGA GENERAL G8 | 05 |
+| Roberto Roldos | 36 | rroldos@vinlitoral.com.ec | VINLITORAL | BODEGA GENERAL G8 | 05 |
+| Erick Pihuave | 45 | epihuave@vinlitoral.com.ec | VINLITORAL | BODEGA GENERAL G8 | 05 |
+| Jaime Paredes | 124 | jparedes@plusbrand.com.ec | SERVMULTIMARC | MATRIZ PLUSBRAND GYE | 1 |
+| Guillermo Neira | 99 | gneira@plusbrand.com.ec | SERVMULTIMARC | MATRIZ PLUSBRAND GYE | 1 |
+| Jennifer Quintana | 52 | jquintana@plusbrand.com.ec | SERVMULTIMARC | MATRIZ PLUSBRAND GYE | 1 |
+| Mathias Moral | 132 | mmoral@plusbrand.com.ec | SERVMULTIMARC | MATRIZ PLUSBRAND GYE | 1 |
+| Alejandro Mendoza | 102 | amendoza@plusbrand.com.ec | SERVMULTIMARC | MATRIZ PLUSBRAND MANTA | 11 |
+| Byron Cordova | 108 | bcordova@plusbrand.com.ec | SERVMULTIMARC | MATRIZ PLUSBRAND MANTA | 11 |
+| Juan Pablo Cordova | 91 | jcordova@plusbrand.com.ec | PLUSBRAND | MATRIZ PLUSBRAND CUENCA | 17 |
+| Marco Venegas | 98 | mvenegas@plusbrand.com.ec | PLUSBRAND | MATRIZ PLUSBRAND CUENCA | 17 |
+| Nicolás Abril | 93 | nabril@plusbrand.com.ec | PLUSBRAND | MATRIZ PLUSBRAND \| ALMACEN 10 DE AGOSTO | 1 \| 4 |
+| Fernanda Alvarez | 52 | falvarez@plusbrand.com.ec | PLUSBRAND | MATRIZ PLUSBRAND \| ALMACEN 10 DE AGOSTO | 1 \| 4 |
+| Ricardo Cabeza de Vaca | 34 | rcabezadevaca@plusbrand.com.ec | PLUSBRAND | MATRIZ PLUSBRAND \| ALMACEN 10 DE AGOSTO | 1 \| 4 |
+| Isabel Jacome | 117 | ijacome@plusbrand.com.ec | PLUSBRAND | MATRIZ PLUSBRAND \| ALMACEN 10 DE AGOSTO | 1 \| 4 |
+| Sandra Orquera | 47 | sorquera@plusbrand.com.ec | PLUSBRAND | MATRIZ PLUSBRAND \| ALMACEN 10 DE AGOSTO | 1 \| 4 |
+| Stalin Tapia | 34 | stapia@plusbrand.com.ec | PLUSBRAND | MATRIZ PLUSBRAND \| ALMACEN 10 DE AGOSTO | 1 \| 4 |
+
 ---
 
 sql de la consulta
@@ -349,6 +383,7 @@ Error al crear la orden de venta: (1009) Codigo : 01011010010206010750 con saldo
     "id_warehouse": 1,
     "seler_id": 1,
     "serie": 1,
+    "notes": "Pedido generado desde endpoint API",
     "details": [
         {
             "product": "01022094490106020750",
@@ -356,10 +391,8 @@ Error al crear la orden de venta: (1009) Codigo : 01011010010206010750 con saldo
             "unit_price": 18.5,
             "discount": 0.0,
             "total": 37.0,
-            "tax": 0.0,
             "cost_center": "CC-01",
             "account": "4-01-001",
-            "notes": "Pedido generado desde endpoint"
         },
         {
             "product": "01022094490111010750",
@@ -367,10 +400,8 @@ Error al crear la orden de venta: (1009) Codigo : 01011010010206010750 con saldo
             "unit_price": 17.25,
             "discount": 0.0,
             "total": 17.25,
-            "tax": 0.0,
             "cost_center": "CC-01",
             "account": "4-01-001",
-            "notes": "Segunda línea del pedido"
         }
     ]
 }
