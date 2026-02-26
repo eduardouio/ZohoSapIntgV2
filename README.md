@@ -431,6 +431,10 @@ Tabla de referencia en español latino:
 }
 ```
 
+### notas Adicionales sobre el JSON:
+El endpoint identifica el pedido por `id_zoho`, por lo que si se envía un JSON con un `id_zoho` que ya existe en la base de datos, se actualizará el pedido existente en lugar de crear uno nuevo. Esto permite manejar tanto la creación como la actualización de pedidos desde el mismo endpoint, siempre y cuando se mantenga el mismo `id_zoho` para identificar el pedido.
+
+De los pedidos que se actualizan lo unico que no puede cambiar es el cliente y la fecha del pedido, el resto de campos (vendedor, notas, detalles) si pueden ser actualizados y reflejarse en SAP, siempre y y cuando el documento se encuentre en estado abierto (no facturado ni cerrado).
 
 ```sql
 USE master;
@@ -443,5 +447,4 @@ GO
 -- Eliminar la base de datos
 DROP DATABASE DB_INTG_SAPZOHO_PROD;
 GO
-
-
+```
