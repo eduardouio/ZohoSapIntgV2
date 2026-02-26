@@ -44,6 +44,15 @@ namespace ZhohoSapIntg.IntgSAPLibs
             salesOrder.Comments = "Integración SQL order_id=" + order.Id + " zoho_id=" + (order.ZohoId ?? string.Empty);
             salesOrder.DocObjectCode = BoObjectTypes.oOrders;
 
+            // Asignar vendedor desde OSLP
+            var resolver = new SalesPersonResolver(_company);
+            int slpCode = resolver.ResolveSlpCode(order.Salesperson);
+            if (slpCode >= 0)
+            {
+                salesOrder.SalesPersonCode = slpCode;
+                FileLogger.Info("Vendedor asignado a orden SAP: SlpCode=" + slpCode + " order_id=" + order.Id);
+            }
+
             for (int lineIndex = 0; lineIndex < order.Details.Count; lineIndex++)
             {
                 var detail = order.Details[lineIndex];

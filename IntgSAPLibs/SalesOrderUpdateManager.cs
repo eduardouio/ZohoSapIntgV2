@@ -53,6 +53,15 @@ namespace ZhohoSapIntg.IntgSAPLibs
             sapOrder.TaxDate = order.OrderDate;
             sapOrder.Comments = "Actualización SQL order_id=" + order.Id + " zoho_id=" + (order.ZohoId ?? string.Empty);
 
+            // Asignar vendedor desde OSLP
+            var resolver = new SalesPersonResolver(_company);
+            int slpCode = resolver.ResolveSlpCode(order.Salesperson);
+            if (slpCode >= 0)
+            {
+                sapOrder.SalesPersonCode = slpCode;
+                FileLogger.Info("Vendedor asignado a orden SAP (update): SlpCode=" + slpCode + " order_id=" + order.Id);
+            }
+
             int existingLineCount = sapOrder.Lines.Count;
 
             for (int lineIndex = 0; lineIndex < order.Details.Count; lineIndex++)
