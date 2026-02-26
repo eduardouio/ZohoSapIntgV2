@@ -372,15 +372,45 @@ Error al crear la orden de venta: (1009) Codigo : 01011010010206010750 con saldo
 
 ## JSON de muestra para endpoint (recepción de pedidos)
 
+### Estructura del objeto principal (Orden)
+
+| Campo | Tipo | Requerido | Descripción |
+|---|---|---|---|
+| `id_zoho` | `string` | Sí | ID único del pedido en Zoho. Debe iniciar con el prefijo `"ZOHO-"`. |
+| `customer` | `string` | Sí | Código del cliente en SAP. Debe existir previamente en SAP. |
+| `order_date` | `string` | Sí | Fecha del pedido en formato `yyyy-MM-dd`. |
+| `salesperson` | `string` | Sí | Nombre del vendedor. Debe existir previamente en SAP. |
+| `seler_email` | `string` | Sí | Correo del vendedor. Tomar de la tabla de [Mapeo de Vendedores, Empresas y Bodegas](#mapeo-de-vendedores-empresas-y-bodegas). |
+| `enterprise` | `string` | Sí | Nombre de la empresa. Valores válidos: `VINESA`, `PLUSBRAND`, `SERVMULTIMARC`, `VINLITORAL`. |
+| `id_warehouse` | `string` | Sí | ID de la bodega en SAP. Revisar la bodega que corresponde según vendedor y empresa en la tabla de [Mapeo de Vendedores, Empresas y Bodegas](#mapeo-de-vendedores-empresas-y-bodegas). |
+| `seler_id` | `int` | Sí | ID del vendedor en SAP. Tomar de la tabla de [Mapeo de Vendedores, Empresas y Bodegas](#mapeo-de-vendedores-empresas-y-bodegas). |
+| `serie` | `int` | Sí | Serie del documento. Cambia por empresa, pero de momento siempre `1`. |
+| `notes` | `string` | No | Notas generales del pedido. |
+| `details` | `array` | Sí | Lista de productos del pedido. Debe contener al menos un producto. |
+
+### Estructura de cada objeto en `details` (Detalle de línea)
+
+| Campo | Tipo | Requerido | Descripción |
+|---|---|---|---|
+| `product` | `string` | Sí | Código del producto en SAP. Debe existir previamente en SAP. |
+| `quantity` | `decimal` | Sí | Cantidad del producto. Debe ser mayor a `0`. |
+| `unit_price` | `decimal` | Sí | Precio unitario del producto. Debe ser mayor a `0`. |
+| `discount` | `decimal` | Sí | Descuento en valor monetario. |
+| `total` | `decimal` | Sí | Total de la línea: `(quantity × unit_price) - discount`. Debe ser mayor a `0`. |
+| `cost_center` | `string` | No | Centro de costo. |
+| `account` | `string` | No | Cuenta contable. |
+
+### Ejemplo de JSON
+
 ```json
 {
     "id_zoho": "ZOHO-API-0001",
     "customer": "C0102434438",
-    "order_date": "2026-02-21T10:30:00",
+    "order_date": "2026-02-21",
     "salesperson": "Eduardo Villota",
     "seler_email": "evillota@vinesa.com.ec",
-    "enterprise" : "VINESA",
-    "id_warehouse": 1,
+    "enterprise": "VINESA",
+    "id_warehouse": "1",
     "seler_id": 1,
     "serie": 1,
     "notes": "Pedido generado desde endpoint API",
@@ -391,8 +421,8 @@ Error al crear la orden de venta: (1009) Codigo : 01011010010206010750 con saldo
             "unit_price": 18.5,
             "discount": 0.0,
             "total": 37.0,
-            "cost_center": "CC-01",
-            "account": "4-01-001",
+            "cost_center": "",
+            "account": ""
         },
         {
             "product": "01022094490111010750",
@@ -401,7 +431,7 @@ Error al crear la orden de venta: (1009) Codigo : 01011010010206010750 con saldo
             "discount": 0.0,
             "total": 17.25,
             "cost_center": "CC-01",
-            "account": "4-01-001",
+            "account": "4-01-001"
         }
     ]
 }
@@ -419,3 +449,5 @@ GO
 -- Eliminar la base de datos
 DROP DATABASE DB_INTG_SAPZOHO_PROD;
 GO
+
+
