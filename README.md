@@ -160,6 +160,7 @@ CREATE TABLE SAP_Orders (
     doc_num INT NULL,
     doc_entry INT NULL,
     error_message VARCHAR(500) NULL,
+    notes VARCHAR(500) NULL,
     created_at DATETIME NOT NULL DEFAULT GETDATE()
 );
 GO
@@ -175,7 +176,6 @@ CREATE TABLE SAP_Order_Details (
     tax DECIMAL(18,4) NOT NULL DEFAULT 0,
     cost_center VARCHAR(50) NULL,
     account VARCHAR(50) NULL,
-    notes VARCHAR(500) NULL,
     created_at DATETIME NOT NULL DEFAULT GETDATE(),
     CONSTRAINT FK_SAP_Order_Details_Order
         FOREIGN KEY (order_id)
