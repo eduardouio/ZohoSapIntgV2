@@ -123,6 +123,25 @@ class OrderResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class OrderStatusResponse(BaseModel):
+    """Esquema de salida con el estado de integración del pedido."""
+
+    id_zoho: str
+    is_integrated: bool
+    is_failed: bool
+    is_updated: bool
+    is_mail_send: bool
+    mail_send_date: Optional[datetime] = None
+    integration_date: Optional[datetime] = None
+    salesperson: Optional[str] = None
+    seler_email: Optional[str] = None
+    doc_num: Optional[int] = None
+    doc_entry: Optional[int] = None
+    error_message: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
 class MessageResponse(BaseModel):
     """Respuesta genérica con mensaje."""
 

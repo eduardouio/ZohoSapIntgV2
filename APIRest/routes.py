@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from database import get_db
-from schemas import OrderCreate, OrderResponse, MessageResponse
+from schemas import OrderCreate, OrderResponse, OrderStatusResponse, MessageResponse
 from crud import get_order_by_id_zoho, create_order, update_order, get_order_by_id
 
 router = APIRouter(prefix="/orders", tags=["Pedidos"])
@@ -109,3 +109,27 @@ def read_order_by_zoho(id_zoho: str, db: Session = Depends(get_db)):
     from crud import get_order_by_id as _get
     full_order = _get(db, order.id)
     return OrderResponse.model_validate(full_order)
+
+
+@router.get(
+    "/status/{id_zoho}",
+    response_model=OrderStatusResponse,
+    summary="Consultar estado de integración por id_zoho",
+    description=(
+        "Retorna el estado de integración de un pedido: "
+        "si fue integrado a SAP, si falló, si fue actualizado, "
+        "datos del documento SAP (doc_num, doc_entry) y mensaje de error si aplica."
+    ),
+)
+def get_order_status(id_zoho: str, db: Session = Depends(get_db)):
+    """
+    Consulta el estado de integración de un pedido por su id_zoho.
+    Retorna los campos que el subsistema SAP actualiza tras procesar el pedido.
+    """
+    order = get_order_by_id_zoho(db, id_zoho)
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No se encontró el pedido con id_zoho '{id_zoho}'.",
+        )
+    return OrderStatusResponse.model_validate(order)
