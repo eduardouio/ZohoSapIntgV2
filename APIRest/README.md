@@ -73,6 +73,7 @@ DB_PASSWORD = "H0riz0ntes"
 DB_NAME     = "db_zhohoSAP"
 DB_DRIVER   = "ODBC Driver 17 for SQL Server"
 ```
+sqlcmd -S 192.168.0.189 -U intg -P 'H0riz0ntes' -C
 
 ### 7. Iniciar la API
 

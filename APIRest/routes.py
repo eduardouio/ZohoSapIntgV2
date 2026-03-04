@@ -6,10 +6,28 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from database import get_db
+from typing import List
+
 from schemas import OrderCreate, OrderResponse, OrderStatusResponse, MessageResponse
-from crud import get_order_by_id_zoho, create_order, update_order, get_order_by_id
+from crud import get_order_by_id_zoho, create_order, update_order, get_order_by_id, get_all_orders
 
 router = APIRouter(prefix="/orders", tags=["Pedidos"])
+
+
+@router.get(
+    "/",
+    response_model=List[OrderResponse],
+    summary="Listar todos los pedidos",
+    description="Retorna todos los pedidos con sus líneas de detalle. Soporta paginación con `skip` y `limit`.",
+)
+def list_orders(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+):
+    """Retorna una lista paginada de todos los pedidos, ordenados del más reciente al más antiguo."""
+    orders = get_all_orders(db, skip=skip, limit=limit)
+    return [OrderResponse.model_validate(o) for o in orders]
 
 
 @router.post(

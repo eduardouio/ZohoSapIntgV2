@@ -18,6 +18,18 @@ def get_order_by_id_zoho(db: Session, id_zoho: str) -> SAPOrder | None:
     return db.execute(stmt).scalar_one_or_none()
 
 
+def get_all_orders(db: Session, skip: int = 0, limit: int = 100) -> list[SAPOrder]:
+    """Retorna todos los pedidos con sus detalles, con paginación."""
+    stmt = (
+        select(SAPOrder)
+        .options(joinedload(SAPOrder.details))
+        .order_by(SAPOrder.id.desc())
+        .offset(skip)
+        .limit(limit)
+    )
+    return db.execute(stmt).unique().scalars().all()
+
+
 def get_order_by_id(db: Session, order_id: int) -> SAPOrder | None:
     """Busca un pedido por su id incluyendo detalles."""
     stmt = (
