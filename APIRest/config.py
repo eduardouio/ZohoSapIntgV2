@@ -5,9 +5,9 @@ Configuración de la conexión a base de datos MSSQL y parámetros generales de 
 # ── Conexión a Base de Datos ────────────────────────────────────────────────
 DB_SERVER = "192.168.0.189"
 DB_USER = "intg"
-DB_PASSWORD = "H0riz0ntes"
-DB_NAME = "db_zhohoSAP"
-DB_DRIVER = "ODBC Driver 17 for SQL Server"
+DB_PASSWORD = "Horiz0nt3s"
+DB_NAME = "DB_INTG_SAPZOHO_PROD"
+DB_DRIVER = "ODBC Driver 18 for SQL Server"
 
 # Cadena de conexión para pyodbc / SQLAlchemy
 CONNECTION_STRING = (

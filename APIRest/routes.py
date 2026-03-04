@@ -26,8 +26,14 @@ def list_orders(
     db: Session = Depends(get_db),
 ):
     """Retorna una lista paginada de todos los pedidos, ordenados del más reciente al más antiguo."""
-    orders = get_all_orders(db, skip=skip, limit=limit)
-    return [OrderResponse.model_validate(o) for o in orders]
+    try:
+        orders = get_all_orders(db, skip=skip, limit=limit)
+        return [OrderResponse.model_validate(o) for o in orders]
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al obtener los pedidos: {str(e)}",
+        )
 
 
 @router.post(
