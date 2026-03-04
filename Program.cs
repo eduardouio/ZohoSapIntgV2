@@ -15,9 +15,18 @@ namespace ZhohoSapIntg
 
             if (Environment.UserInteractive || IsConsoleMode(args))
             {
-                FileLogger.Info("Ejecución en modo interactivo/consola.");
-                EjecutarProcesoSAP();
-                return;
+                FileLogger.Info("Ejecución en modo interactivo/consola (cada 10 minutos). Presione Ctrl+C para detener.");
+                Console.WriteLine("Proceso iniciado. Se ejecutará cada 10 minutos. Presione Ctrl+C para detener.");
+
+                while (true)
+                {
+                    EjecutarProcesoSAP();
+
+                    var nextRun = DateTime.Now.AddMinutes(10);
+                    Console.WriteLine($"Siguiente ejecución a las {nextRun:HH:mm:ss}. Esperando 10 minutos...");
+                    FileLogger.Info($"Siguiente ejecución a las {nextRun:HH:mm:ss}.");
+                    Thread.Sleep(TimeSpan.FromMinutes(10));
+                }
             }
 
             FileLogger.Info("Ejecución en modo servicio de Windows.");
@@ -171,7 +180,7 @@ namespace ZhohoSapIntg
         protected override void OnStart(string[] args)
         {
             FileLogger.Info("Servicio iniciado.");
-            _timer = new Timer(RunProcessSafely, null, TimeSpan.Zero, TimeSpan.FromMinutes(5));
+            _timer = new Timer(RunProcessSafely, null, TimeSpan.Zero, TimeSpan.FromMinutes(10));
         }
 
         protected override void OnStop()
