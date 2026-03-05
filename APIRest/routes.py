@@ -10,8 +10,13 @@ from typing import List
 
 from schemas import OrderCreate, OrderResponse, OrderStatusResponse, MessageResponse
 from crud import get_order_by_id_zoho, create_order, update_order, get_order_by_id, get_all_orders
+from auth import verify_token
 
-router = APIRouter(prefix="/orders", tags=["Pedidos"])
+router = APIRouter(
+    prefix="/orders",
+    tags=["Pedidos"],
+    dependencies=[Depends(verify_token)],
+)
 
 
 @router.get(

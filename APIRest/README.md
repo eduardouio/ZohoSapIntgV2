@@ -103,16 +103,45 @@ Abrir en el navegador:
 
 ```
 APIRest/
-├── config.py          # Configuración de BD y parámetros de la API
+├── config.py          # Configuración de BD, token y parámetros de la API
+├── auth.py            # Autenticación por Bearer Token
 ├── database.py        # Motor SQLAlchemy y dependencia get_db
 ├── models.py          # Modelos ORM (SAP_Orders, SAP_Order_Details)
 ├── schemas.py         # Esquemas Pydantic de validación (entrada/salida)
 ├── crud.py            # Operaciones de creación y consulta
-├── routes.py          # Definición de endpoints
+├── routes.py          # Definición de endpoints (protegidos con Bearer)
 ├── main.py            # Punto de entrada FastAPI
 ├── requirements.txt   # Dependencias Python
 └── README.md          # Este archivo
 ```
+
+---
+
+## Autenticación
+
+Todos los endpoints bajo `/orders/` requieren un **Bearer Token** en la cabecera `Authorization`.  
+El token es estático y se configura en `config.py` (`API_SECRET_TOKEN`).
+
+**Header requerido:**
+
+```
+Authorization: Bearer <TOKEN_SECRETO>
+```
+
+Si el token no se envía o es incorrecto, la API responde con:
+
+```json
+{
+  "detail": "Token inválido o no autorizado."
+}
+```
+
+| Código | Descripción |
+|---|---|
+| `401 Unauthorized` | Token ausente o inválido |
+| `403 Forbidden` | Esquema de autenticación incorrecto (no es Bearer) |
+
+> **Nota:** El endpoint `/` (Health Check) **no** requiere autenticación.
 
 ---
 
@@ -153,6 +182,7 @@ APIRest/
 
 ```
 Content-Type: application/json
+Authorization: Bearer <TOKEN_SECRETO>
 ```
 
 #### Campos modificables en actualización
@@ -201,6 +231,7 @@ Cuando el pedido ya existe, solo se actualizan estos campos del JSON:
 ```bash
 curl -X POST http://localhost:8000/orders/ \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <TOKEN_SECRETO>" \
   -d '{
     "id_zoho": "ZOHO-API-0001",
     "customer": "C0102434438",
@@ -271,9 +302,14 @@ $body = @{
     )
 } | ConvertTo-Json -Depth 3
 
+$headers = @{
+    "Authorization" = "Bearer <TOKEN_SECRETO>"
+}
+
 Invoke-RestMethod -Uri "http://localhost:8000/orders/" `
     -Method POST `
     -ContentType "application/json" `
+    -Headers $headers `
     -Body $body
 ```
 
@@ -340,7 +376,8 @@ Invoke-RestMethod -Uri "http://localhost:8000/orders/" `
 **Ejemplo:**
 
 ```bash
-curl http://localhost:8000/orders/1
+curl http://localhost:8000/orders/1 \
+  -H "Authorization: Bearer <TOKEN_SECRETO>"
 ```
 
 | Código | Descripción |
@@ -359,7 +396,8 @@ curl http://localhost:8000/orders/1
 **Ejemplo:**
 
 ```bash
-curl http://localhost:8000/orders/zoho/ZOHO-API-0001
+curl http://localhost:8000/orders/zoho/ZOHO-API-0001 \
+  -H "Authorization: Bearer <TOKEN_SECRETO>"
 ```
 
 | Código | Descripción |

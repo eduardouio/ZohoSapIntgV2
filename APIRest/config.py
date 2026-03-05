@@ -18,6 +18,9 @@ CONNECTION_STRING = (
 # ── Empresas válidas ────────────────────────────────────────────────────────
 VALID_ENTERPRISES = {"VINESA", "PLUSBRAND", "SERVMULTIMARC", "VINLITORAL"}
 
+# ── Autenticación ───────────────────────────────────────────────────────────
+API_SECRET_TOKEN = "ZoHo$aP!ntG_2026#Pr0d"
+
 # ── API ─────────────────────────────────────────────────────────────────────
 API_TITLE = "Zhoho‑SAP Integration API"
 API_VERSION = "1.0.0"
